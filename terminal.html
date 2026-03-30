@@ -7,40 +7,113 @@
 <title>OpenAero Terminal</title>
 
 <style>
+  :root {
+    --term-bg: #0c0c0c;
+    --term-green: #4ade80;
+    --term-blue: #60a5fa;
+    --term-purple: #a78bfa;
+    --term-cyan: #22d3ee;
+    --term-text: #e5e7eb;
+    --term-dim: rgba(229, 231, 235, 0.5);
+  }
+
   body {
     margin: 0;
-    background: #060d1f;
-    color: #22d3ee;
-    font-family: "Courier New", monospace;
+    background-color: var(--term-bg);
+    color: var(--term-text);
+    font-family: 'Fira Code', 'Ubuntu Mono', 'Source Code Pro', 'Courier New', monospace;
     display: flex;
     flex-direction: column;
     height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    z-index: 10;
+    background-size: 100% 3px, 3px 100%;
+    pointer-events: none;
   }
 
   #terminal {
-    padding: 20px;
+    padding: 25px;
     flex: 1;
     overflow-y: auto;
     white-space: pre-wrap;
+    line-height: 1.4;
+    text-shadow: 0 0 5px rgba(34, 211, 238, 0.3);
+    scrollbar-width: thin;
+    scrollbar-color: var(--term-cyan) transparent;
   }
 
-  .line { margin-bottom: 6px; }
-  .prompt { color: #4ade80; }
+  #terminal::-webkit-scrollbar { width: 6px; }
+  #terminal::-webkit-scrollbar-thumb { background: var(--term-cyan); border-radius: 10px; }
+
+  .line { 
+    margin-bottom: 4px; 
+    animation: fadeIn 0.1s ease-in;
+  }
 
   #input-line {
     display: flex;
-    padding: 10px 20px;
-    border-top: 1px solid rgba(34,211,238,0.2);
+    align-items: center;
+    padding: 15px 25px;
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(34, 211, 238, 0.1);
+    z-index: 20;
+  }
+
+  #prompt {
+    font-weight: bold;
+    letter-spacing: 0.5px;
   }
 
   #cmd {
     flex: 1;
     background: transparent;
     border: none;
-    color: #22d3ee;
+    color: var(--term-cyan);
     font-family: inherit;
-    font-size: 14px;
+    font-size: 15px;
     outline: none;
+    padding-left: 2px;
+    caret-color: var(--term-green);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .separator {
+    color: var(--term-dim);
+    letter-spacing: -1px;
+  }
+
+  .highlight { color: var(--term-purple); }
+  .success { color: var(--term-green); }
+
+  #cmd {
+    caret-shape: block;
+    caret-color: var(--term-green);
+  }
+
+  #input-line::after {
+    content: "_";
+    animation: blink 1s infinite;
+    color: var(--term-green);
+    font-weight: bold;
+  }
+
+  @keyframes blink { 
+    0%, 100% { opacity: 1; } 
+    50% { opacity: 0; } 
   }
 </style>
 
@@ -56,15 +129,39 @@
 </div>
 
 <script>
-function updatePrompt() {
-  const user = "openaero";
-  const host = "tracker";
-  const path = "~";
 
+const VFS = {
+  "README.md": "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/README.md",
+  "index.html": "https://github.com/xaviershilosaputra/OpenAero/blob/main/index.html",
+  "terminal.html": "https://github.com/xaviershilosaputra/OpenAero/blob/main/terminal.html",
+  "js": {
+    "script.js": "https://github.com/xaviershilosaputra/OpenAero/blob/main/js/script.js"
+  },
+  "css": {
+    "styles.css": "https://github.com/xaviershilosaputra/OpenAero/blob/main/css/styles.css"
+  },
+  "docs": {
+    "CONTRIBUTING.md": "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/docs/CONTRIBUTING.md"
+  }
+};
+
+let currentDir = VFS;
+let currentPath = "~";
+let isSudo = false;
+
+function sanitize(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function updatePrompt() {
+  const user = isSudo ? "root" : "openaero";
+  const host = "tracker";
   document.getElementById("prompt").innerHTML =
     `<span style="color:#4ade80">${user}</span>@` +
     `<span style="color:#60a5fa">${host}</span>:` +
-    `<span style="color:#a78bfa">${path}</span>$&nbsp;`;
+    `<span style="color:#a78bfa">${currentPath}</span>${isSudo ? '#' : '$'}&nbsp;`;
 }
 
 updatePrompt();
@@ -112,31 +209,123 @@ const input = document.getElementById("cmd");
 const API_KEY = "2582c5cc9b95a3ce51c21525ff6a4063";
 const BASE = "https://api.aviationstack.com/v1/flights";
 
-function print(text = "") {
+let commandHistory = [];
+let historyIndex = -1;
+
+input.addEventListener("keydown", async e => {
+  if (e.key === "Enter") {
+    const cmd = input.value.trim();
+    if (cmd) {
+      commandHistory.unshift(cmd); 
+      historyIndex = -1;
+      await handleCommand(cmd);
+    }
+    input.value = "";
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (historyIndex < commandHistory.length - 1) {
+      historyIndex++;
+      input.value = commandHistory[historyIndex];
+    }
+  } else if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (historyIndex > 0) {
+      historyIndex--;
+      input.value = commandHistory[historyIndex];
+    } else {
+      historyIndex = -1;
+      input.value = "";
+    }
+  } else if (e.key === "Tab") {
+    e.preventDefault();
+    const current = input.value.toLowerCase();
+    const commands = ["search", "help", "clear", "exit", "theme", "guide", "ls", "cd", "cat", "sudo", "uname", "neofetch", "ping", "whoami", "history"];
+    const match = commands.find(c => c.startsWith(current));
+    if (match) input.value = match + " ";
+  }
+});
+
+async function print(text = "", speed = 10) {
   const div = document.createElement("div");
   div.className = "line";
-  div.textContent = text;
   term.appendChild(div);
-  term.scrollTop = term.scrollHeight;
+
+  const parts = text.split(/(\[\[[gbpcr]\]\])/);
+  let currentSpan = document.createElement("span");
+  div.appendChild(currentSpan);
+
+  for (const part of parts) {
+    if (part === "[[g]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-green)"; div.appendChild(currentSpan); continue; }
+    if (part === "[[b]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-blue)"; div.appendChild(currentSpan); continue; }
+    if (part === "[[p]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-purple)"; div.appendChild(currentSpan); continue; }
+    if (part === "[[c]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-cyan)"; div.appendChild(currentSpan); continue; }
+    if (part === "[[r]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-text)"; div.appendChild(currentSpan); continue; }
+
+    const safePart = sanitize(part);
+    let i = 0;
+    
+    while (i < safePart.length) {
+      if (safePart[i] === '&') {
+        const entityEnd = safePart.indexOf(';', i);
+        if (entityEnd !== -1) {
+          currentSpan.innerHTML += safePart.substring(i, entityEnd + 1);
+          i = entityEnd + 1;
+        } else {
+          currentSpan.innerHTML += safePart[i];
+          i++;
+        }
+      } else {
+        currentSpan.innerHTML += safePart[i];
+        i++;
+      }
+
+      term.scrollTop = term.scrollHeight;
+      if (speed > 0) await new Promise(r => setTimeout(r, speed));
+    }
+  }
+  return Promise.resolve();
 }
 
-function banner() {
-  print("OPENAERO TERMINAL v1.0");
-  print("Type 'help' to begin.");
-  print("");
+async function banner() {
+  const now = new Date().toUTCString();
+  await print("[[c]]Welcome to OpenAero OS v1.1.0-release (kernel 5.15.0-generic)[[r]]");
+  await print(`System information as of ${now}`);
+  await print("");
+  await print(" * Documentation:  https://github.com/youruser/openaero");
+  await print(" * Management:     Terminal View (CLI Active)");
+  await print(" * Support:        Open Source Community");
+  await print("");
+  await print("Last login: " + new Date().toLocaleDateString() + " from 127.0.0.1");
+  await print("Type [[g]]'help'[[r]] to see available commands.");
+  await print("");
 }
 
-function help() {
-  print("OpenAero CLI Commands:");
-  print("");
-  print("  search <flight>   → Track flight (e.g. SQ322)");
-  print("  guide <topic>     → Learn aviation data");
-  print("     topics: metar, flight, status");
-  print("  theme <mode>      → Change theme (dark/light)");
-  print("  clear             → Clear terminal");
-  print("  exit              → Return to main interface");
-  print("  help              → Show this message");
-  print("");
+async function help() {
+  await print("[[p]]--- OpenAero Help Menu ---[[r]]");
+  await print("");
+  await print("[[b]]Flight Tracking:[[r]]");
+  await print("  [[g]]search <ID>[[r]]  Track a specific flight (e.g., [[c]]search SQ322[[r]])");
+  await print("  [[g]]guide <topic>[[r]] Learn about [[c]]metar, flight,[[r]] or [[c]]status[[r]] data");
+  await print("");
+  await print("[[b]]File System (Browse Source Code):[[r]]");
+  await print("  [[g]]ls[[r]]             List files in the current folder");
+  await print("  [[g]]cd <folder>[[r]]    Move into a folder (e.g., [[c]]cd js[[r]])");
+  await print("  [[g]]cd ..[[r]]          Go back up one folder");
+  await print("  [[g]]cat <file>[[r]]     Open and read a file in a new tab");
+  await print("");
+  await print("[[b]]System & Security:[[r]]");
+  await print("  [[g]]sudo[[r]]           Log in as [[p]]root[[r]] to access the GitHub repo");
+  await print("  [[g]]whoami[[r]]         Check if you are a standard user or root");
+  await print("  [[g]]history[[r]]        See a list of your recently used commands");
+  await print("  [[g]]neofetch[[r]]       Display system status and aircraft info");
+  await print("  [[g]]ping <host>[[r]]    Test your real-time connection to the web");
+  await print("  [[g]]uname[[r]]          Show the current OS kernel version");
+  await print("");
+  await print("[[b]]Terminal Control:[[r]]");
+  await print("  [[g]]theme <mode>[[r]]   Change look to [[c]]dark, light,[[r]] or [[c]]auto[[r]]");
+  await print("  [[g]]clear[[r]]           Empty the terminal screen");
+  await print("  [[g]]exit[[r]]            Close the terminal and return home");
+  await print("");
 }
 
 function validateFlight(f) {
@@ -144,9 +333,8 @@ function validateFlight(f) {
 }
 
 async function searchFlight(flight) {
-  print("Connecting to aviationstack API...");
-  setTimeout(() => print("Fetching flight telemetry..."), 300);
-  setTimeout(() => print("Decoding data stream..."), 600);
+  await print("Connecting to aviationstack API...");
+  await print("Fetching flight telemetry...");
   
   try {
     const url = `${BASE}?access_key=${API_KEY}&flight_iata=${encodeURIComponent(flight)}`;
@@ -154,39 +342,36 @@ async function searchFlight(flight) {
     const data = await res.json();
 
     if (!data.data || !data.data.length) {
-      print("No results found.");
+      await print("[[p]]No results found for IDENT: [[r]]" + flight);
       return;
     }
 
     const f = data.data[0];
-
-    print("======================================");
-    print(`Flight: ${f.flight?.iata || "N/A"}`);
-    print(`Airline: ${f.airline?.name || "Unknown"}`);
-    print(`Status: ${f.flight_status}`);
-    print("");
-    print(`Route: [${f.departure?.iata}] ---> [${f.arrival?.iata}]`);
-    print(`Departure: ${f.departure?.airport}`);
-    print(`Arrival: ${f.arrival?.airport}`);
-    print("");
-    print(`Dep Time: ${f.departure?.scheduled}`);
-    print(`Arr Time: ${f.arrival?.scheduled}`);
-    print("======================================");
-    print("");
-
+    await print("[[c]]--- TELEMETRY DATA RECOVERY ---[[r]]");
+    await print(`[[p]]IDENT:[[r]]      ${f.flight?.iata || "N/A"}`);
+    await print(`[[p]]CARRIER:[[r]]    ${f.airline?.name || "Unknown"}`);
+    await print(`[[p]]STATUS:[[r]]     [[g]]${(f.flight_status || "unknown").toUpperCase()}[[r]]`);
+    await print("");
+    await print(`[[b]]VECTOR:[[r]]     [[c]]${f.departure?.iata}[[r]] -> [[c]]${f.arrival?.iata}[[r]]`);
+    await print(`[[b]]DEP_NAME:[[r]]   ${f.departure?.airport}`);
+    await print(`[[b]]ARR_NAME:[[r]]   ${f.arrival?.airport}`);
+    await print("");
+    await print(`[[p]]SCHED_DEP:[[r]]  ${f.departure?.scheduled}`);
+    await print(`[[p]]SCHED_ARR:[[r]]  ${f.arrival?.scheduled}`);
+    await print("[[c]]--------------------------------[[r]]");
+    await print("");
   } catch (e) {
-    print("Error fetching data.");
-    console.error(e);
+    await print("[[p]]Error:[[r]] Connection to remote host failed.");
   }
 }
 
-function handleCommand(cmd) {
-  print("openaero@cli:~$ " + cmd);
-
+async function handleCommand(cmd) {
+  await print("[[g]]openaero[[r]]@[[b]]tracker[[r]]:[[p]]~[[r]]$ " + cmd, 0);
+  
   const parts = cmd.trim().split(" ");
   const base = parts[0].toLowerCase();
 
-  if (base === "help") return help();
+  if (base === "help") return await help();
   if (base === "clear") {
     term.innerHTML = "";
     return;
@@ -195,10 +380,10 @@ function handleCommand(cmd) {
   if (base === "search") {
     const flight = parts[1];
     if (!flight || !validateFlight(flight)) {
-      print("Invalid flight format. Example: SQ322");
+      await print("Invalid flight format. Example: SQ322");
       return;
     }
-    searchFlight(flight.toUpperCase());
+    await searchFlight(flight.toUpperCase());
     return;
   }
 
@@ -206,16 +391,16 @@ function handleCommand(cmd) {
     const mode = parts[1];
 
     if (!mode || !["dark", "light", "auto"].includes(mode)) {
-        print("Usage: theme <dark|light|auto>");
+        await print("Usage: theme <dark|light|auto>");
         return;
     }
 
     applyTheme(mode, true);
 
     if (mode === "auto") {
-        print("Theme reset → following system preference");
+        await print("Theme reset → following system preference");
     } else {
-        print(`Theme overridden → ${mode}`);
+        await print(`Theme overridden → ${mode}`);
     }
 
     return;
@@ -225,63 +410,178 @@ function handleCommand(cmd) {
     const topic = parts[1];
 
     if (!topic) {
-        print("Usage: guide <topic>");
-        print("Topics: metar, flight, status");
+        await print("Usage: guide <topic>");
+        await print("Topics: metar, flight, status");
         return;
     }
 
     if (topic === "metar") {
-        print("METAR Guide:");
-        print("  Example: METAR WSSS 121200Z 18010KT 9999 FEW020 30/24 Q1012");
-        print("  WSSS    → Airport ICAO code");
-        print("  121200Z → Date/time (12th day, 12:00 UTC)");
-        print("  18010KT → Wind (180° at 10 knots)");
-        print("  9999    → Visibility (10km+)");
-        print("  FEW020  → Few clouds at 2000 ft");
-        print("  30/24   → Temp/Dew point (°C)");
-        print("  Q1012   → Pressure (hPa)");
+        await print("METAR Guide:");
+        await print("  Example: METAR WSSS 121200Z 18010KT 9999 FEW020 30/24 Q1012");
+        await print("  WSSS    → Airport ICAO code");
+        await print("  121200Z → Date/time (12th day, 12:00 UTC)");
+        await print("  18010KT → Wind (180° at 10 knots)");
+        await print("  9999    → Visibility (10km+)");
+        await print("  FEW020  → Few clouds at 2000 ft");
+        await print("  30/24   → Temp/Dew point (°C)");
+        await print("  Q1012   → Pressure (hPa)");
         return;
     }
 
     if (topic === "flight") {
-        print("Flight Data Guide:");
-        print("  Status: scheduled | active | landed | cancelled");
-        print("  Delay: minutes behind schedule");
-        print("  Gate/Terminal: boarding info");
-        print("  Aircraft: plane type (e.g. B77W)");
+        await print("Flight Data Guide:");
+        await print("  Status: scheduled | active | landed | cancelled");
+        await print("  Delay: minutes behind schedule");
+        await print("  Gate/Terminal: boarding info");
+        await print("  Aircraft: plane type (e.g. B77W)");
         return;
     }
 
     if (topic === "status") {
-        print("Status Guide:");
-        print("  scheduled → not departed yet");
-        print("  active    → currently flying");
-        print("  landed    → arrived");
-        print("  cancelled → flight cancelled");
+        await print("Status Guide:");
+        await print("  scheduled → not departed yet");
+        await print("  active    → currently flying");
+        await print("  landed    → arrived");
+        await print("  cancelled → flight cancelled");
         return;
     }
 
-    print("Unknown guide topic.");
+    await print("Unknown guide topic.");
+    return;
+  }
+
+  if (base === "ls") {
+    const entries = Object.keys(currentDir);
+    let output = "";
+    entries.forEach(entry => {
+      const isDir = typeof currentDir[entry] === "object";
+      output += isDir ? `[[b]]${entry}/[[r]]  ` : `[[g]]${entry}[[r]]  `;
+    });
+    await print(output);
+    return;
+  }
+
+  if (base === "cd") {
+    const target = parts[1];
+    if (!target || target === "~" || target === "/" || target === "..") {
+      currentDir = VFS;
+      currentPath = "~";
+    } else if (currentDir[target] && typeof currentDir[target] === "object") {
+      currentDir = currentDir[target];
+      currentPath = `~/${target}`;
+    } else {
+      await print(`cd: folder not found: ${target}`);
+    }
+    updatePrompt();
+    return;
+  }
+
+  if (base === "cat") {
+    const file = parts[1];
+    if (!file) {
+      await print("usage: cat <file>");
+    } else if (currentDir[file] && typeof currentDir[file] === "string") {
+      await print(`[[c]]Reading remote source: ${file}...[[r]]`);
+      const url = currentDir[file];
+      window.open(url, "_blank");
+    } else {
+      await print(`cat: ${file}: No such file or directory`);
+    }
+    return;
+  }
+
+  if (base === "sudo") {
+    if (isSudo) {
+      await print("Already running as root.");
+      return;
+    }
+    
+    const pass = prompt("[sudo] password for openaero:");
+    if (pass !== "admin123") {
+      await print("sudo: 1 incorrect password attempt");
+      return;
+    }
+
+    await print("[[p]]ALRT:[[r]] Elevated privileges requested.");
+    await print("Logging into GitHub OpenAero Kernel...");
+    isSudo = true;
+    updatePrompt();
+    await print("[[g]]Session promoted to ROOT.[[r]] Opening Repository...");
+    
+    setTimeout(() => {
+      window.open("https://github.com/xaviershilosaputra/OpenAero", "_blank");
+    }, 1000);
+    return;
+  }
+
+  if (base === "whoami") {
+    await print(isSudo ? "root" : "openaero");
+    return;
+  }
+
+  if (base === "uname") {
+    await print("OpenAero-OS 5.15.0-generic x86_64 GNU/Linux");
+    return;
+  }
+
+  if (base === "neofetch") {
+    const theme = localStorage.getItem("openaero-theme") || "auto";
+    const user = isSudo ? "root" : "openaero";
+    
+    const uptimeMins = Math.floor((performance.now() / 60000));
+    const uptimeStr = uptimeMins > 0 ? `${uptimeMins}m` : "initial boot";
+
+    await print("[[c]]     ______          [[r]] [[c]]" + user + "[[r]]@[[b]]openaero[[r]]");
+    await print("[[c]]  -- \\____/\\         [[r]] ----------------");
+    await print("[[c]]  --- \\____\\\\        [[r]] [[p]]OS:[[r]] OpenAero Linux v1.1");
+    await print("[[c]]  --- /     \\\\       [[r]] [[p]]Kernel:[[r]] 5.15.0-vfs");
+    await print("[[c]]  -- /______//       [[r]] [[p]]Uptime:[[r]] " + uptimeStr);
+    await print("[[c]]    \\______/         [[r]] [[p]]Theme:[[r]] " + theme);
+    await print("[[c]]                      [[r]] [[p]]Uplink:[[r]] Active (AviationStack)");
+    return;
+  }
+
+  if (base === "ping") {
+    const host = "https://api.github.com";
+    await print(`PING ${host} via HTTPS/GET...`);
+
+    for (let i = 0; i < 3; i++) {
+      const start = performance.now();
+      try {
+        await fetch(host, { mode: 'no-cors' });
+        const end = performance.now();
+        const duration = (end - start).toFixed(2);
+        await print(`Reply from ${host}: time=${duration}ms status=OK`);
+      } catch (e) {
+        await print(`Request timeout for ${host}`);
+      }
+      await new Promise(r => setTimeout(r, 500));
+    }
+    return;
+  }
+
+  if (base === "history") {
+    if (commandHistory.length === 0) {
+      await print("No history found.");
+      return;
+    }
+    const historyCopy = [...commandHistory].reverse();
+    for (let i = 0; i < historyCopy.length; i++) {
+      await print(`  ${i + 1}  ${historyCopy[i]}`);
+    }
     return;
   }
 
   if (base === "exit") {
-    print("Exiting OpenAero Terminal...");
+    await print("Exiting OpenAero Terminal...");
     setTimeout(() => {
         window.location.href = "index.html";
     }, 500);
     return;
   }
 
-  print("Command not found. Type 'help'.");
+  await print("Command not found. Type 'help'.");
 }
-
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    handleCommand(input.value);
-    input.value = "";
-  }
-});
 
 window.addEventListener("storage", (e) => {
   if (e.key === "openaero-theme") {
