@@ -1,0 +1,634 @@
+/* ============================================================
+   OpenAero — styles.css
+   Control-room / radar terminal aesthetic
+   ============================================================ */
+
+/* ---- Tokens ---- */
+:root {
+  --cyan: #22d3ee;
+  --cyan-dim: #0891b2;
+  --navy-900: #060d1f;
+  --navy-800: #0b1630;
+  --navy-700: #0f1f45;
+  --glass-bg: rgba(11, 22, 48, 0.72);
+  --glass-border: rgba(34, 211, 238, 0.12);
+  --glass-border-hover: rgba(34, 211, 238, 0.3);
+  --text-primary: #e2eaf8;
+  --text-secondary: rgba(226, 234, 248, 0.55);
+  --shadow-glow: 0 0 40px rgba(34, 211, 238, 0.06);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+  --glass-bg: rgba(240, 246, 255, 0.82);
+  --glass-border: rgba(8, 145, 178, 0.18);
+  --glass-border-hover: rgba(8, 145, 178, 0.45);
+  --text-primary: #0f172a;
+  --text-secondary: rgba(15, 23, 42, 0.55);
+  --shadow-glow: 0 0 40px rgba(6, 182, 212, 0.08);
+  --shadow-card: 0 4px 24px rgba(6, 182, 212, 0.1);
+}
+
+/* ---- Base ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--navy-900);
+  color: var(--text-primary);
+  font-family: "DM Sans", sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+[data-theme="light"] #app-body { background-color: #dff0f7; }
+
+/* ---- Overlays ---- */
+.scanlines {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+}
+[data-theme="light"] .scanlines { opacity: 0.3; }
+
+.radar-bg {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 70% 20%, rgba(34,211,238,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 10% 80%, rgba(6,182,212,0.05) 0%, transparent 60%);
+}
+
+header, main, footer { position: relative; z-index: 2; }
+
+/* ---- Glass panel ---- */
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: var(--shadow-glow), var(--shadow-card);
+}
+header.glass-panel { border-top: none; border-left: none; border-right: none; }
+
+/* ---- Logo ---- */
+.logo-text { color: var(--text-primary); letter-spacing: 0.12em; }
+a { color: inherit; }
+
+/* ---- Status dot ---- */
+.status-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
+/* ---- Buttons ---- */
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+  outline: none;
+}
+.btn-icon:hover, .btn-icon:focus-visible {
+  border-color: var(--glass-border-hover);
+  background: rgba(34,211,238,0.1);
+  transform: translateY(-1px);
+}
+.btn-icon:focus-visible { box-shadow: 0 0 0 2px var(--cyan); }
+
+[data-theme="dark"] #icon-sun  { display: block; }
+[data-theme="dark"] #icon-moon { display: none; }
+[data-theme="light"] #icon-sun  { display: none; }
+[data-theme="light"] #icon-moon { display: block; }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  border-radius: 7px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+  outline: none;
+}
+.btn-ghost:hover, .btn-ghost:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--glass-border-hover);
+  background: rgba(34,211,238,0.06);
+}
+.btn-ghost:focus-visible { box-shadow: 0 0 0 2px var(--cyan); }
+
+/* ---- Hero ---- */
+.hero-tag {
+  display: inline-block;
+  background: rgba(34,211,238,0.1);
+  border: 1px solid rgba(34,211,238,0.25);
+  color: var(--cyan);
+  padding: 4px 14px;
+  border-radius: 100px;
+  letter-spacing: 0.2em;
+}
+.gradient-text {
+  background: linear-gradient(135deg, var(--cyan) 0%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ---- Search ---- */
+.search-panel { border-radius: 20px; }
+.input-wrapper { position: relative; }
+.input-icon {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+.flight-input {
+  width: 100%;
+  padding: 12px 14px 12px 40px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: "Space Mono", monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+[data-theme="light"] .flight-input { background: rgba(255,255,255,0.6); }
+.flight-input::placeholder { color: var(--text-secondary); font-family: "DM Sans", sans-serif; letter-spacing: 0.01em; }
+.flight-input:focus { border-color: var(--cyan-dim); box-shadow: 0 0 0 3px rgba(34,211,238,0.15), inset 0 1px 3px rgba(0,0,0,0.2); }
+
+.search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--cyan-dim), #0f7990);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: "Space Mono", monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 25px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+  outline: none;
+  flex-shrink: 0;
+}
+.search-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(34,211,238,0.3); background: linear-gradient(135deg, #22d3ee, var(--cyan-dim)); }
+.search-btn:active { transform: translateY(0); }
+.search-btn:focus-visible { box-shadow: 0 0 0 3px rgba(34,211,238,0.4); }
+.search-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ---- Error ---- */
+.error-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  color: #f87171;
+  font-family: "Space Mono", monospace;
+  font-size: 0.75rem;
+}
+
+/* ---- Radar spinner ---- */
+.radar-spinner {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(34,211,238,0.2);
+  position: relative;
+}
+.radar-spinner::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(34,211,238,0.15);
+}
+.radar-spinner::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 50%; height: 2px;
+  background: linear-gradient(90deg, rgba(34,211,238,0.8), transparent);
+  transform-origin: left center;
+  transform: translateY(-50%);
+  animation: radar-sweep 1.4s linear infinite;
+}
+@keyframes radar-sweep {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to   { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* ---- Loading dots ---- */
+.loading-dots { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.loading-dots span {
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--cyan);
+  opacity: 0.4;
+  animation: blink-dot 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink-dot {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.9); }
+  40%           { opacity: 1;   transform: scale(1.1); }
+}
+
+/* ---- Result card ---- */
+.result-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: card-in 0.3s ease both;
+}
+.result-card:hover, .result-card:focus-visible {
+  border-color: var(--glass-border-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(34,211,238,0.12);
+}
+.result-card:focus-visible { box-shadow: 0 0 0 2px var(--cyan); }
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-header { display: flex; align-items: center; justify-content: space-between; }
+.flight-badge { font-family: "Space Mono", monospace; font-size: 1rem; font-weight: 700; color: var(--cyan); letter-spacing: 0.08em; }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-family: "Space Mono", monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.status-active    { background: rgba(34,197,94,0.15);   color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+.status-scheduled { background: rgba(99,102,241,0.15);  color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+.status-landed    { background: rgba(6,182,212,0.12);   color: #67e8f9; border: 1px solid rgba(6,182,212,0.3); }
+.status-cancelled { background: rgba(239,68,68,0.12);   color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.status-delayed   { background: rgba(251,146,60,0.12);  color: #fdba74; border: 1px solid rgba(251,146,60,0.3); }
+.status-unknown   { background: rgba(148,163,184,0.12); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); }
+
+.route-row { display: flex; align-items: center; gap: 10px; }
+.airport-code { font-family: "Space Mono", monospace; font-size: 1.4rem; font-weight: 700; line-height: 1; }
+.airport-name { font-size: 0.7rem; opacity: 0.5; margin-top: 2px; }
+.route-arrow { flex: 1; display: flex; align-items: center; gap: 4px; opacity: 0.3; overflow: hidden; }
+.route-line { flex: 1; height: 1px; background-image: repeating-linear-gradient(90deg, currentColor 0, currentColor 4px, transparent 4px, transparent 8px); }
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: "Space Mono", monospace;
+  font-size: 0.7rem;
+  opacity: 0.45;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 10px;
+}
+.card-cta { display: flex; align-items: center; gap: 4px; color: var(--cyan); opacity: 0.6; font-family: "Space Mono", monospace; font-size: 0.7rem; transition: opacity var(--transition); }
+.result-card:hover .card-cta, .result-card:focus-visible .card-cta { opacity: 1; }
+
+/* ---- Detail card ---- */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+
+.detail-block {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+[data-theme="light"] .detail-block { background: rgba(255,255,255,0.4); }
+
+.detail-label { font-family: "Space Mono", monospace; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.45; margin-bottom: 4px; }
+.detail-value { font-family: "Space Mono", monospace; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+.detail-value.large { font-size: 2rem; letter-spacing: 0.04em; color: var(--cyan); }
+
+.detail-route-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 20px;
+}
+.detail-airport { text-align: center; }
+.detail-iata { font-family: "Space Mono", monospace; font-size: 2.5rem; font-weight: 700; line-height: 1; color: var(--text-primary); }
+.detail-city { font-size: 0.75rem; opacity: 0.5; margin-top: 4px; }
+.detail-arrow { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.detail-arrow-line { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: 0.4; }
+.detail-flight-num { font-family: "Space Mono", monospace; font-size: 0.75rem; color: var(--cyan); opacity: 0.7; }
+
+/* ---- Section label ---- */
+.section-label { display: flex; align-items: center; gap: 16px; }
+.section-line { flex: 1; height: 1px; background: var(--glass-border); }
+
+/* ---- Avgeek cards ---- */
+.avgeek-card {
+  display: block;
+  text-decoration: none;
+  color: var(--text-primary);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 14px;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+.avgeek-card:hover, .avgeek-card:focus-visible { border-color: var(--glass-border-hover); transform: translateY(-3px); box-shadow: 0 8px 28px rgba(34,211,238,0.1); }
+.avgeek-card:focus-visible { box-shadow: 0 0 0 2px var(--cyan); }
+.avgeek-card-inner { display: flex; align-items: center; gap: 14px; padding: 18px 20px; }
+.avgeek-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: rgba(34,211,238,0.1);
+  border: 1px solid rgba(34,211,238,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cyan);
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+.avgeek-card:hover .avgeek-icon { background: rgba(34,211,238,0.18); }
+
+/* ---- Empty icon ---- */
+.empty-icon {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: rgba(34,211,238,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+}
+
+/* ════════════════════════════════════════
+   LIVE MAP
+════════════════════════════════════════ */
+.map-wrapper { position: relative; }
+
+#flight-map {
+  z-index: 1;
+  border-radius: 16px;
+}
+
+.map-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(6,13,31,0.85);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  border-radius: 100px;
+  padding: 6px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+[data-theme="light"] .map-legend { background: rgba(240,246,255,0.9); }
+
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.legend-dot.dep { background: #22d3ee; box-shadow: 0 0 6px #22d3ee; }
+.legend-dot.arr { background: #818cf8; box-shadow: 0 0 6px #818cf8; }
+
+/* Leaflet dark tile override */
+.leaflet-tile-pane { filter: brightness(0.7) contrast(1.1) saturate(0.7) hue-rotate(180deg); }
+[data-theme="light"] .leaflet-tile-pane { filter: none; }
+
+.leaflet-container { font-family: "Space Mono", monospace; background: var(--navy-900); }
+[data-theme="light"] .leaflet-container { background: #d6eaf2; }
+
+.leaflet-popup-content-wrapper {
+  background: rgba(6,13,31,0.95) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 10px !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+}
+[data-theme="light"] .leaflet-popup-content-wrapper { background: rgba(240,246,255,0.97) !important; }
+.leaflet-popup-tip { background: rgba(6,13,31,0.95) !important; }
+[data-theme="light"] .leaflet-popup-tip { background: rgba(240,246,255,0.97) !important; }
+
+.map-popup-iata { font-family: "Space Mono", monospace; font-size: 1.1rem; font-weight: 700; color: var(--cyan); }
+.map-popup-name { font-family: "DM Sans", sans-serif; font-size: 0.75rem; opacity: 0.6; margin-top: 2px; }
+.map-popup-time { font-family: "Space Mono", monospace; font-size: 0.7rem; margin-top: 6px; opacity: 0.8; }
+
+.leaflet-control-attribution { font-size: 9px !important; opacity: 0.5; }
+
+/* ════════════════════════════════════════
+   METAR / WEATHER PANEL
+════════════════════════════════════════ */
+.weather-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 18px;
+  overflow: hidden;
+  animation: card-in 0.35s ease both;
+}
+
+.weather-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.weather-airport-iata {
+  font-family: "Space Mono", monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 0.06em;
+}
+
+.weather-airport-role {
+  font-family: "Space Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  margin-top: 1px;
+}
+
+.weather-icon-wrap {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: rgba(34,211,238,0.1);
+  border: 1px solid rgba(34,211,238,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cyan);
+}
+
+.weather-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.weather-stat {
+  padding: 14px 16px;
+  background: var(--glass-bg);
+}
+
+[data-theme="light"] .weather-stat { background: rgba(240,246,255,0.6); }
+
+.weather-stat-label {
+  font-family: "Space Mono", monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  margin-bottom: 3px;
+}
+
+.weather-stat-value {
+  font-family: "Space Mono", monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.weather-stat-value.highlight { color: var(--cyan); }
+
+.weather-metar-block {
+  padding: 14px 20px;
+}
+
+.metar-label {
+  font-family: "Space Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  margin-bottom: 6px;
+}
+
+.metar-string {
+  font-family: "Space Mono", monospace;
+  font-size: 0.7rem;
+  color: var(--cyan);
+  opacity: 0.8;
+  word-break: break-all;
+  line-height: 1.7;
+  background: rgba(34,211,238,0.05);
+  border: 1px solid rgba(34,211,238,0.12);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.weather-condition-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--glass-border);
+  font-family: "Space Mono", monospace;
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.weather-condition-icon { color: var(--cyan); flex-shrink: 0; }
+
+.weather-error {
+  padding: 24px 20px;
+  text-align: center;
+  font-family: "Space Mono", monospace;
+  font-size: 0.75rem;
+  opacity: 0.4;
+}
+
+/* ════════════════════════════════════════
+   UTILITY
+════════════════════════════════════════ */
+.hidden { display: none !important; }
+
+footer { border-color: var(--glass-border); }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(34,211,238,0.35); }
+
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.focus-ring:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+.copy-metar-btn {
+  @apply p-1.5 rounded-md transition-all duration-200 opacity-40 hover:opacity-100 hover:bg-white/10;
+  border: 1px solid transparent;
+}
+
+.copy-metar-btn:active {
+  @apply scale-90;
+}
