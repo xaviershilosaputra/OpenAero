@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenAero Terminal</title>
+
+<style>
+  body {
+    margin: 0;
+    background: #060d1f;
+    color: #22d3ee;
+    font-family: "Courier New", monospace;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  #terminal {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+
+  .line { margin-bottom: 6px; }
+  .prompt { color: #4ade80; }
+
+  #input-line {
+    display: flex;
+    padding: 10px 20px;
+    border-top: 1px solid rgba(34,211,238,0.2);
+  }
+
+  #cmd {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #22d3ee;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+  }
+</style>
+
+</head>
+
+<body>
+
+<div id="terminal"></div>
+
+<div id="input-line">
+  <span class="prompt" id="prompt"></span>
+  <input id="cmd" autofocus autocomplete="off" />
+</div>
+
+<script>
+function updatePrompt() {
+  const user = "openaero";
+  const host = "tracker";
+  const path = "~";
+
+  document.getElementById("prompt").innerHTML =
+    `<span style="color:#4ade80">${user}</span>@` +
+    `<span style="color:#60a5fa">${host}</span>:` +
+    `<span style="color:#a78bfa">${path}</span>$&nbsp;`;
+}
+
+updatePrompt();
+
+function applyTheme(theme, persist = true) {
+  let resolved = theme;
+
+  if (!theme || theme === "auto") {
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    resolved = prefersDark ? "dark" : "light";
+  }
+
+  document.documentElement.setAttribute("data-theme", resolved);
+  document.body.setAttribute("data-theme", resolved);
+
+  if (persist && theme !== undefined) {
+    try {
+      localStorage.setItem("openaero-theme", theme);
+    } catch (_) {}
+  }
+}
+
+function initTheme() {
+  let stored = null;
+
+  try {
+    stored = localStorage.getItem("openaero-theme");
+  } catch (_) {}
+
+  applyTheme(stored || "auto", false);
+
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", () => {
+    const current = localStorage.getItem("openaero-theme");
+
+    if (!current || current === "auto") {
+      applyTheme("auto", false);
+    }
+  });
+}
+
+const term = document.getElementById("terminal");
+const input = document.getElementById("cmd");
+
+const API_KEY = "2582c5cc9b95a3ce51c21525ff6a4063";
+const BASE = "https://api.aviationstack.com/v1/flights";
+
+function print(text = "") {
+  const div = document.createElement("div");
+  div.className = "line";
+  div.textContent = text;
+  term.appendChild(div);
+  term.scrollTop = term.scrollHeight;
+}
+
+function banner() {
+  print("OPENAERO TERMINAL v1.0");
+  print("Type 'help' to begin.");
+  print("");
+}
+
+function help() {
+  print("OpenAero CLI Commands:");
+  print("");
+  print("  search <flight>   → Track flight (e.g. SQ322)");
+  print("  guide <topic>     → Learn aviation data");
+  print("     topics: metar, flight, status");
+  print("  theme <mode>      → Change theme (dark/light)");
+  print("  clear             → Clear terminal");
+  print("  exit              → Return to main interface");
+  print("  help              → Show this message");
+  print("");
+}
+
+function validateFlight(f) {
+  return /^[A-Z0-9]{2,3}[0-9]{1,4}[A-Z]?$/i.test(f);
+}
+
+async function searchFlight(flight) {
+  print("Connecting to aviationstack API...");
+  setTimeout(() => print("Fetching flight telemetry..."), 300);
+  setTimeout(() => print("Decoding data stream..."), 600);
+  
+  try {
+    const url = `${BASE}?access_key=${API_KEY}&flight_iata=${encodeURIComponent(flight)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.data || !data.data.length) {
+      print("No results found.");
+      return;
+    }
+
+    const f = data.data[0];
+
+    print("======================================");
+    print(`Flight: ${f.flight?.iata || "N/A"}`);
+    print(`Airline: ${f.airline?.name || "Unknown"}`);
+    print(`Status: ${f.flight_status}`);
+    print("");
+    print(`Route: [${f.departure?.iata}] ---> [${f.arrival?.iata}]`);
+    print(`Departure: ${f.departure?.airport}`);
+    print(`Arrival: ${f.arrival?.airport}`);
+    print("");
+    print(`Dep Time: ${f.departure?.scheduled}`);
+    print(`Arr Time: ${f.arrival?.scheduled}`);
+    print("======================================");
+    print("");
+
+  } catch (e) {
+    print("Error fetching data.");
+    console.error(e);
+  }
+}
+
+function handleCommand(cmd) {
+  print("openaero@cli:~$ " + cmd);
+
+  const parts = cmd.trim().split(" ");
+  const base = parts[0].toLowerCase();
+
+  if (base === "help") return help();
+  if (base === "clear") {
+    term.innerHTML = "";
+    return;
+  }
+
+  if (base === "search") {
+    const flight = parts[1];
+    if (!flight || !validateFlight(flight)) {
+      print("Invalid flight format. Example: SQ322");
+      return;
+    }
+    searchFlight(flight.toUpperCase());
+    return;
+  }
+
+  if (base === "theme") {
+    const mode = parts[1];
+
+    if (!mode || !["dark", "light", "auto"].includes(mode)) {
+        print("Usage: theme <dark|light|auto>");
+        return;
+    }
+
+    applyTheme(mode, true);
+
+    if (mode === "auto") {
+        print("Theme reset → following system preference");
+    } else {
+        print(`Theme overridden → ${mode}`);
+    }
+
+    return;
+  }
+
+  if (base === "guide") {
+    const topic = parts[1];
+
+    if (!topic) {
+        print("Usage: guide <topic>");
+        print("Topics: metar, flight, status");
+        return;
+    }
+
+    if (topic === "metar") {
+        print("METAR Guide:");
+        print("  Example: METAR WSSS 121200Z 18010KT 9999 FEW020 30/24 Q1012");
+        print("  WSSS    → Airport ICAO code");
+        print("  121200Z → Date/time (12th day, 12:00 UTC)");
+        print("  18010KT → Wind (180° at 10 knots)");
+        print("  9999    → Visibility (10km+)");
+        print("  FEW020  → Few clouds at 2000 ft");
+        print("  30/24   → Temp/Dew point (°C)");
+        print("  Q1012   → Pressure (hPa)");
+        return;
+    }
+
+    if (topic === "flight") {
+        print("Flight Data Guide:");
+        print("  Status: scheduled | active | landed | cancelled");
+        print("  Delay: minutes behind schedule");
+        print("  Gate/Terminal: boarding info");
+        print("  Aircraft: plane type (e.g. B77W)");
+        return;
+    }
+
+    if (topic === "status") {
+        print("Status Guide:");
+        print("  scheduled → not departed yet");
+        print("  active    → currently flying");
+        print("  landed    → arrived");
+        print("  cancelled → flight cancelled");
+        return;
+    }
+
+    print("Unknown guide topic.");
+    return;
+  }
+
+  if (base === "exit") {
+    print("Exiting OpenAero Terminal...");
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 500);
+    return;
+  }
+
+  print("Command not found. Type 'help'.");
+}
+
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    handleCommand(input.value);
+    input.value = "";
+  }
+});
+
+window.addEventListener("storage", (e) => {
+  if (e.key === "openaero-theme") {
+    applyTheme(e.newValue || "dark");
+    print(`[system] Theme synced: ${e.newValue}`);
+  }
+});
+
+initTheme();
+banner();
+</script>
+
+</body>
+</html>

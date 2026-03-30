@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>OpenAero &mdash; Free Flight Tracker &amp; Aviation Dashboard</title>
+  <meta name="description" content="OpenAero is a free real-time flight tracking dashboard for aviation enthusiasts. Search any IATA flight number to view live status, METAR weather, and an interactive route map. Built for avgeeks." />
+  <meta name="keywords" content="flight tracker, live flight status, IATA flight search, avgeek, aviation dashboard, METAR weather, airport weather, departure arrival, free flight tracker, OpenAero, flight map" />
+  <meta name="author" content="OpenAero" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#060d1f" />
+  <link rel="canonical" href="https://openaero.app/" />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://openaero.app/" />
+  <meta property="og:title"       content="OpenAero — Free Flight Tracker &amp; Aviation Dashboard" />
+  <meta property="og:description" content="Search any flight by IATA number. Live status, METAR weather, and interactive route map. Free. No sign-up." />
+  <meta property="og:image"       content="https://openaero.app/assets/og-image.png" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name"   content="OpenAero" />
+  <meta property="og:locale"      content="en_US" />
+
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:site"        content="@openaero_app" />
+  <meta name="twitter:title"       content="OpenAero — Free Flight Tracker &amp; Aviation Dashboard" />
+  <meta name="twitter:description" content="Search any IATA flight number. Live status, METAR weather, and interactive map. Free for avgeeks." />
+  <meta name="twitter:image"       content="https://openaero.app/assets/og-image.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebApplication",
+    "name":"OpenAero",
+    "url":"https://openaero.app/",
+    "description":"Free real-time flight tracking dashboard. Search IATA flight numbers for live status, METAR weather, and interactive route maps.",
+    "applicationCategory":"TravelApplication",
+    "operatingSystem":"Web",
+    "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+    "featureList":["Real-time flight status","METAR aviation weather","Interactive route map","Departure and arrival tracking","Avgeek external tool links"],
+    "author":{"@type":"Organization","name":"OpenAero"}
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {"@type":"Question","name":"How do I track a flight on OpenAero?","acceptedAnswer":{"@type":"Answer","text":"Enter the IATA flight number (e.g. SQ322, BA117) into the search bar and press Search. OpenAero displays live status, departure, arrival, METAR weather, and a route map."}},
+      {"@type":"Question","name":"What is a METAR report?","acceptedAnswer":{"@type":"Answer","text":"METAR is the standard aviation weather format. It encodes wind, visibility, cloud cover, temperature, dewpoint, and altimeter setting at a specific airport."}},
+      {"@type":"Question","name":"Is OpenAero free to use?","acceptedAnswer":{"@type":"Answer","text":"Yes. OpenAero is completely free, client-side only, and requires no account. It uses the Aviationstack free tier and Open-Meteo APIs."}}
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['attribute', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"Space Mono"', 'monospace'],
+            sans: ['"DM Sans"', 'sans-serif'],
+          },
+          colors: {
+            cyan:  { 400: '#22d3ee', 500: '#06b6d4', 600: '#0891b2' },
+            navy:  { 900: '#060d1f', 800: '#0b1630', 700: '#0f1f45', 600: '#152554' },
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body class="min-h-screen font-sans transition-colors duration-300" id="app-body">
+
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="radar-bg"   aria-hidden="true"></div>
+
+  <!-- HEADER -->
+  <header class="glass-panel border-b sticky top-0 z-50" role="banner">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+
+        <a href="/" class="flex items-center gap-3 focus-ring" style="text-decoration:none" aria-label="OpenAero home">
+          <div aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="15" stroke="currentColor" stroke-width="1.5" class="text-cyan-400" opacity="0.4"/>
+              <circle cx="16" cy="16" r="10" stroke="currentColor" stroke-width="1"   class="text-cyan-400" opacity="0.3"/>
+              <path d="M16 4 L19 14 L28 16 L19 18 L16 28 L13 18 L4 16 L13 14 Z" fill="currentColor" class="text-cyan-400"/>
+            </svg>
+          </div>
+          <div>
+            <span class="font-mono font-bold text-lg tracking-wider logo-text">OPEN<span class="text-cyan-400">AERO</span></span>
+            <span class="block font-mono text-xs opacity-40 tracking-widest uppercase">Flight Intelligence</span>
+          </div>
+        </a>
+
+        <nav class="flex items-center gap-2" role="navigation" aria-label="Primary navigation">
+          <span class="status-dot" aria-label="System online"></span>
+          <span class="font-mono text-xs opacity-50 mr-4 hidden sm:inline" aria-hidden="true">SYSTEM NOMINAL</span>
+          <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme" type="button">
+            <i data-lucide="sun"  id="icon-sun"  class="w-4 h-4" aria-hidden="true"></i>
+            <i data-lucide="moon" id="icon-moon" class="w-4 h-4" aria-hidden="true"></i>
+          </button>
+        </nav>
+
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10" role="main" id="main-content">
+
+    <section class="mb-12 text-center" aria-labelledby="hero-heading">
+      <div class="hero-tag font-mono text-xs mb-4">REAL-TIME FLIGHT TRACKING</div>
+      <h1 id="hero-heading" class="text-4xl sm:text-5xl lg:text-6xl font-mono font-bold mb-4 leading-tight">
+        Track Any<br /><span class="gradient-text">Flight, Anywhere.</span>
+      </h1>
+      <p class="text-base sm:text-lg opacity-60 max-w-xl mx-auto font-sans font-light">
+        Enter any IATA flight number for live departure, arrival, METAR weather, and an interactive route map. Built for avgeeks.
+      </p>
+    </section>
+
+    <section class="mb-10" aria-labelledby="search-heading" id="search">
+      <h2 id="search-heading" class="sr-only">Flight Search</h2>
+      <div class="glass-panel rounded-2xl p-6 max-w-2xl mx-auto search-panel">
+        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+          <div class="flex-1 w-full flex flex-col justify-end">
+            <label for="flight-input" class="block font-mono text-xs tracking-widest uppercase opacity-60 mb-2">
+              Flight Number
+            </label>
+            <div class="input-wrapper">
+              <i data-lucide="search" class="input-icon w-4 h-4" aria-hidden="true"></i>
+              <input
+                type="text"
+                id="flight-input"
+                class="flight-input"
+                placeholder="e.g. SQ322, BA117, AA101"
+                aria-label="Enter IATA flight number"
+                aria-describedby="input-hint"
+                maxlength="8"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </div>
+            <p id="input-hint" class="font-mono text-xs opacity-40 mt-2">Format: 2-letter airline code + flight number</p>
+          </div>
+          <button id="search-btn" type="button" class="search-btn" aria-label="Search for flight">
+            <i data-lucide="radar" class="w-4 h-4" aria-hidden="true"></i>
+            <span>Search</span>
+          </button>
+        </div>
+        <div id="input-error" class="mt-3 hidden" role="alert" aria-live="assertive">
+          <div class="error-chip">
+            <i data-lucide="alert-triangle" class="w-3 h-3" aria-hidden="true"></i>
+            <span id="error-msg"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div aria-live="polite" aria-atomic="true" id="results-live-region" class="sr-only"></div>
+
+    <!-- Loading -->
+    <section id="loading-section" class="hidden mb-8" aria-label="Loading flight data">
+      <div class="glass-panel rounded-2xl p-10 max-w-2xl mx-auto text-center">
+        <div class="radar-spinner mx-auto mb-4" aria-hidden="true"></div>
+        <p class="font-mono text-sm opacity-60 tracking-widest uppercase">Querying flight data</p>
+        <div class="loading-dots mt-2" aria-hidden="true"><span></span><span></span><span></span></div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="results-section" class="hidden mb-8" aria-labelledby="results-heading">
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="results-heading" class="font-mono text-sm tracking-widest uppercase opacity-60">
+          Results <span id="results-count" class="text-cyan-400"></span>
+        </h2>
+        <button id="clear-results" class="btn-ghost font-mono text-xs" type="button" aria-label="Clear search results">
+          <i data-lucide="x" class="w-3 h-3" aria-hidden="true"></i>
+          Clear
+        </button>
+      </div>
+      <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" role="list" aria-label="Flight results"></div>
+    </section>
+
+    <!-- Detail -->
+    <section id="detail-section" class="hidden mb-8" aria-labelledby="detail-heading">
+      <div class="flex items-center gap-3 mb-4">
+        <button id="back-btn" class="btn-ghost font-mono text-xs" type="button" aria-label="Back to results">
+          <i data-lucide="arrow-left" class="w-3 h-3" aria-hidden="true"></i>
+          Back
+        </button>
+        <h2 id="detail-heading" class="font-mono text-sm tracking-widest uppercase opacity-60">Flight Detail</h2>
+      </div>
+      <div id="detail-card" class="glass-panel rounded-2xl p-6 lg:p-8" role="region" aria-label="Flight detail information"></div>
+    </section>
+
+    <!-- Empty -->
+    <section id="empty-section" class="hidden mb-8" aria-label="No results found">
+      <div class="glass-panel rounded-2xl p-12 max-w-md mx-auto text-center">
+        <div class="empty-icon mx-auto mb-4" aria-hidden="true">
+          <i data-lucide="plane-off" class="w-8 h-8 opacity-30"></i>
+        </div>
+        <h2 class="font-mono font-bold mb-2">No Flights Found</h2>
+        <p class="text-sm opacity-50">No data returned for this flight number. Try a different number or check the format.</p>
+      </div>
+    </section>
+
+    <!-- ════ LIVE MAP ════ -->
+    <section id="map-section" class="hidden mb-12" aria-labelledby="map-heading">
+      <div class="section-label mb-4">
+        <h2 id="map-heading" class="font-mono text-xs tracking-widest uppercase opacity-60">Live Route Map</h2>
+        <div class="section-line" aria-hidden="true"></div>
+      </div>
+      <div class="glass-panel rounded-2xl overflow-hidden" style="position:relative;">
+        <div id="flight-map" style="height:440px;width:100%;" role="img" aria-label="Interactive flight route map"></div>
+        <div id="map-legend" class="map-legend hidden" aria-hidden="true">
+          <span class="legend-dot dep"></span><span class="font-mono text-xs">Departure</span>
+          <span class="legend-dot arr"></span><span class="font-mono text-xs">Arrival</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ METAR + WEATHER ════ -->
+    <section id="weather-section" class="hidden mb-12" aria-labelledby="weather-heading">
+      <div class="section-label mb-4">
+        <h2 id="weather-heading" class="font-mono text-xs tracking-widest uppercase opacity-60">Airport Weather &amp; METAR</h2>
+        <div class="section-line" aria-hidden="true"></div>
+      </div>
+
+      <div id="weather-loading" class="glass-panel rounded-xl p-8 text-center hidden">
+        <div class="loading-dots mx-auto"><span></span><span></span><span></span></div>
+        <p class="font-mono text-xs opacity-50 mt-3 tracking-widest uppercase">Fetching METAR Data</p>
+      </div>
+
+      <div id="weather-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+    </section>
+
+    <!-- ════ AVGEEK MODE ════ -->
+    <section id="avgeek-section" class="mt-16" aria-labelledby="avgeek-heading">
+    <div class="section-label mb-6">
+        <h2 id="avgeek-heading" class="font-mono text-xs tracking-widest uppercase opacity-60">
+        Avgeek Dashboard
+        </h2>
+        <div class="section-line" aria-hidden="true"></div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        <!-- Flightradar24 -->
+        <a id="link-fr24"
+        href="https://www.flightradar24.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="avgeek-card"
+        aria-label="Open Flightradar24 in a new tab">
+        <div class="avgeek-card-inner">
+            <div class="avgeek-icon" aria-hidden="true">
+            <i data-lucide="radio" class="w-5 h-5"></i>
+            </div>
+            <div>
+            <div class="font-mono font-bold text-sm">Flightradar24</div>
+            <div class="font-sans text-xs opacity-50 mt-0.5">Live radar tracking</div>
+            </div>
+            <i data-lucide="external-link"
+            class="w-3.5 h-3.5 ml-auto opacity-40 flex-shrink-0"
+            aria-hidden="true"></i>
+        </div>
+        </a>
+
+        <!-- FlightAware -->
+        <a id="link-fa"
+        href="https://www.flightaware.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="avgeek-card"
+        aria-label="Open FlightAware in a new tab">
+        <div class="avgeek-card-inner">
+            <div class="avgeek-icon" aria-hidden="true">
+            <i data-lucide="navigation" class="w-5 h-5"></i>
+            </div>
+            <div>
+            <div class="font-mono font-bold text-sm">FlightAware</div>
+            <div class="font-sans text-xs opacity-50 mt-0.5">Flight planning data</div>
+            </div>
+            <i data-lucide="external-link"
+            class="w-3.5 h-3.5 ml-auto opacity-40 flex-shrink-0"
+            aria-hidden="true"></i>
+        </div>
+        </a>
+
+        <!-- Planespotters -->
+        <a id="link-ps"
+        href="https://www.planespotters.net"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="avgeek-card"
+        aria-label="Open Planespotters in a new tab">
+        <div class="avgeek-card-inner">
+            <div class="avgeek-icon" aria-hidden="true">
+            <i data-lucide="camera" class="w-5 h-5"></i>
+            </div>
+            <div>
+            <div class="font-mono font-bold text-sm">Planespotters</div>
+            <div class="font-sans text-xs opacity-50 mt-0.5">Aircraft photography</div>
+            </div>
+            <i data-lucide="external-link"
+            class="w-3.5 h-3.5 ml-auto opacity-40 flex-shrink-0"
+            aria-hidden="true"></i>
+        </div>
+        </a>
+
+        <!-- Terminal Mode -->
+        <a href="terminal.html"
+        class="avgeek-card"
+        aria-label="Open OpenAero Terminal">
+        <div class="avgeek-card-inner">
+            <div class="avgeek-icon" aria-hidden="true">
+            <i data-lucide="terminal" class="w-5 h-5"></i>
+            </div>
+            <div>
+            <div class="font-mono font-bold text-sm">Terminal Mode</div>
+            <div class="font-sans text-xs opacity-50 mt-0.5">CLI flight tracking</div>
+            </div>
+            <i data-lucide="external-link"
+            class="w-3.5 h-3.5 ml-auto opacity-40 flex-shrink-0"
+            aria-hidden="true"></i>
+        </div>
+        </a>
+
+        <a id="link-latc"
+        href="https://www.liveatc.net"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="avgeek-card"
+        aria-label="Open LiveATC in a new tab">
+        <div class="avgeek-card-inner">
+            <div class="avgeek-icon" aria-hidden="true">
+            <i data-lucide="mic" class="w-5 h-5"></i>
+            </div>
+            <div>
+            <div class="font-mono font-bold text-sm">LiveATC</div>
+            <div class="font-sans text-xs opacity-50 mt-0.5">Real-time ATC radio</div>
+            </div>
+            <i data-lucide="external-link"
+            class="w-3.5 h-3.5 ml-auto opacity-40 flex-shrink-0"
+            aria-hidden="true"></i>
+        </div>
+        </a>
+
+        <a id="link-sv"
+        href="https://skyvector.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="avgeek-card"
+        aria-label="Open SkyVector in a new tab">
+        <div class="avgeek-card-inner">
+            <div class="avgeek-icon" aria-hidden="true">
+            <i data-lucide="map" class="w-5 h-5"></i>
+            </div>
+            <div>
+            <div class="font-mono font-bold text-sm">SkyVector</div>
+            <div class="font-sans text-xs opacity-50 mt-0.5">Aeronautical charts</div>
+            </div>
+            <i data-lucide="external-link"
+            class="w-3.5 h-3.5 ml-auto opacity-40 flex-shrink-0"
+            aria-hidden="true"></i>
+        </div>
+        </a>
+
+    </div>
+    </section>
+
+    <!-- ════ FAQ (SEO content) ════ -->
+    <section class="mt-20" aria-labelledby="faq-heading">
+      <div class="section-label mb-6">
+        <h2 id="faq-heading" class="font-mono text-xs tracking-widest uppercase opacity-60">Frequently Asked Questions (FAQ)</h2>
+        <div class="section-line" aria-hidden="true"></div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="glass-panel rounded-xl p-5">
+          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">How do I track a flight?</h3>
+          <p class="text-xs opacity-60 leading-relaxed">Enter the IATA flight number (e.g. SQ322) in the search bar. OpenAero fetches live status, departure and arrival times, METAR weather at both airports, and plots the route on an interactive map.</p>
+        </div>
+        <div class="glass-panel rounded-xl p-5">
+          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">What is a flight number?</h3>
+          <p class="text-xs opacity-60 leading-relaxed">A flight number is a unique identifier assigned to each flight by an airline. It typically consists of two letters (the airline code) followed by numbers (the flight route identifier).</p>
+        </div>
+        <div class="glass-panel rounded-xl p-5">
+          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">What is a METAR report?</h3>
+          <p class="text-xs opacity-60 leading-relaxed">METAR is the global standard for aviation weather observation. It encodes wind speed and direction, visibility, cloud cover, temperature, dewpoint, and altimeter setting. Pilots and air traffic controllers use it worldwide.</p>
+        </div>
+        <div class="glass-panel rounded-xl p-5">
+          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">Is OpenAero free?</h3>
+          <p class="text-xs opacity-60 leading-relaxed">Yes. OpenAero is fully client-side and uses free public APIs including the Aviationstack free tier and Open-Meteo. No account, no sign-up, no cost. Works on any static host including GitHub Pages.</p>
+        </div>
+        <div class="glass-panel rounded-xl p-5">
+          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">Is OpenAero open-source?</h3>
+          <p class="text-xs opacity-60 leading-relaxed">Yes. OpenAero is fully open-source and available on GitHub. Feel free to contribute or fork the project!</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="border-t mt-20" role="contentinfo">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <span class="font-mono text-xs opacity-30">OPENAERO &mdash; FLIGHT INTELLIGENCE DASHBOARD</span>
+        <span class="font-mono text-xs opacity-30">DATA: AVIATIONSTACK &bull; OPEN-METEO &bull; OPENSTREETMAP</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN2GRnc=" crossorigin=""></script>
+  <script src="js/script.js"></script>
+</body>
+</html>
+
+  /* Future Upgrades 
+    - Weather data integration using Open-Meteo API for real-time METAR and TAF reports
+    - Live map visualization of flight paths and positions using OpenSky Network data
+    - Additional avgeek resources like aircraft type databases, historical flight data, and aviation news feeds
+    - Performance optimizations and caching strategies for faster data retrieval and improved user experience
+    - Accessibility enhancements based on user feedback and testing, such as improved screen reader support and keyboard navigation
+    - Continuous monitoring of API changes and updates to ensure the dashboard remains functional and up-to-date with the latest aviation data
+    - World Clock Feature showing local time at departure and arrival airports
+    - Historical Flight Data allowing users to look up past flights and their details
+    - Contextual Travel Information such as airport delays, weather conditions, and travel advisories for the flight's route
+    - Travel Plan Integration enabling users to input their travel itinerary and receive updates on all flights in their plan
+    - User Accounts and Personalization for saving favorite flights, setting up alerts, and customizing the dashboard experience
+    - Where To Go? Feature providing travel recommendations based on flight data, such as popular destinations, nearby attractions, and travel trends
+    - Integration with social media platforms for sharing flight information and connecting with other avgeeks
+    - Integration of Google and Apple Maps for detailed airport information, terminal maps, and navigation assistance during travel
+  */
