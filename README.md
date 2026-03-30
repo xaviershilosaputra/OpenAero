@@ -59,16 +59,4 @@ This project is licensed under the **MIT License**.
 
 - You are **free** to learn from, modify, customize, and remix this code.
 - You are **free** to use this for commercial purposes.
-- **Attribution is Required**: You must maintain proper recognition and attribution to the original author (Rainier Pearson Saputra). You may modify the footer branding as long as the attribution remains clear.
-
-Terminal View (CLI) is almost done! I have successfully implemented all the basic terminal commands such as help, search <flight>, guide <topic>, theme <mode>, clear, and exit. However, I still found the current UI ugly and messy. To make it look like a real terminal interface, I plan to change the font styles and color, along with background color adjustment, to improve the terminal interface UI. I also plan to add more commands for advanced searching and detailed information gathering. 
-
-Command Description:
-  search <flight>    - Track flight (e.g. SQ322)
-  guide <topic>      - Learn aviation data (topics: metar, flight, status (more will be added in the future))
-  theme <mode> - Change theme (dark/light)
-  clear              - Clear terminal
-  exit                - Return to main interface
-  help                - Show this message
-
-In the next update, I plan to improve the terminal UI by refactoring the current style.
+- **Attribution is Required**: You must maintain proper recognition and attribution to the original author. You may modify the footer branding as long as the attribution remains clear.
