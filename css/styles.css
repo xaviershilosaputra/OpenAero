@@ -1,9 +1,3 @@
-/* ============================================================
-   OpenAero — styles.css
-   Control-room / radar terminal aesthetic
-   ============================================================ */
-
-/* ---- Tokens ---- */
 :root {
   --cyan: #22d3ee;
   --cyan-dim: #0891b2;
@@ -30,7 +24,6 @@
   --shadow-card: 0 4px 24px rgba(6, 182, 212, 0.1);
 }
 
-/* ---- Base ---- */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
@@ -45,7 +38,6 @@ body {
 
 [data-theme="light"] #app-body { background-color: #dff0f7; }
 
-/* ---- Overlays ---- */
 .scanlines {
   pointer-events: none;
   position: fixed;
@@ -67,7 +59,6 @@ body {
 
 header, main, footer { position: relative; z-index: 2; }
 
-/* ---- Glass panel ---- */
 .glass-panel {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -77,11 +68,9 @@ header, main, footer { position: relative; z-index: 2; }
 }
 header.glass-panel { border-top: none; border-left: none; border-right: none; }
 
-/* ---- Logo ---- */
 .logo-text { color: var(--text-primary); letter-spacing: 0.12em; }
 a { color: inherit; }
 
-/* ---- Status dot ---- */
 .status-dot {
   display: inline-block;
   width: 7px; height: 7px;
@@ -95,7 +84,6 @@ a { color: inherit; }
   50%       { opacity: 0.6; transform: scale(0.85); }
 }
 
-/* ---- Buttons ---- */
 .btn-icon {
   display: flex;
   align-items: center;
@@ -141,7 +129,6 @@ a { color: inherit; }
 }
 .btn-ghost:focus-visible { box-shadow: 0 0 0 2px var(--cyan); }
 
-/* ---- Hero ---- */
 .hero-tag {
   display: inline-block;
   background: rgba(34,211,238,0.1);
@@ -158,7 +145,6 @@ a { color: inherit; }
   background-clip: text;
 }
 
-/* ---- Search ---- */
 .search-panel { border-radius: 20px; }
 .input-wrapper { position: relative; }
 .input-icon {
@@ -210,7 +196,6 @@ a { color: inherit; }
 .search-btn:focus-visible { box-shadow: 0 0 0 3px rgba(34,211,238,0.4); }
 .search-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-/* ---- Error ---- */
 .error-chip {
   display: inline-flex;
   align-items: center;
@@ -224,7 +209,6 @@ a { color: inherit; }
   font-size: 0.75rem;
 }
 
-/* ---- Radar spinner ---- */
 .radar-spinner {
   width: 56px; height: 56px;
   border-radius: 50%;
@@ -253,7 +237,6 @@ a { color: inherit; }
   to   { transform: translateY(-50%) rotate(360deg); }
 }
 
-/* ---- Loading dots ---- */
 .loading-dots { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .loading-dots span {
   display: inline-block;
@@ -270,7 +253,6 @@ a { color: inherit; }
   40%           { opacity: 1;   transform: scale(1.1); }
 }
 
-/* ---- Result card ---- */
 .result-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -338,7 +320,6 @@ a { color: inherit; }
 .card-cta { display: flex; align-items: center; gap: 4px; color: var(--cyan); opacity: 0.6; font-family: "Space Mono", monospace; font-size: 0.7rem; transition: opacity var(--transition); }
 .result-card:hover .card-cta, .result-card:focus-visible .card-cta { opacity: 1; }
 
-/* ---- Detail card ---- */
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
 
@@ -370,11 +351,9 @@ a { color: inherit; }
 .detail-arrow-line { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: 0.4; }
 .detail-flight-num { font-family: "Space Mono", monospace; font-size: 0.75rem; color: var(--cyan); opacity: 0.7; }
 
-/* ---- Section label ---- */
 .section-label { display: flex; align-items: center; gap: 16px; }
 .section-line { flex: 1; height: 1px; background: var(--glass-border); }
 
-/* ---- Avgeek cards ---- */
 .avgeek-card {
   display: block;
   text-decoration: none;
@@ -404,7 +383,6 @@ a { color: inherit; }
 }
 .avgeek-card:hover .avgeek-icon { background: rgba(34,211,238,0.18); }
 
-/* ---- Empty icon ---- */
 .empty-icon {
   width: 56px; height: 56px;
   border-radius: 16px;
@@ -415,9 +393,6 @@ a { color: inherit; }
   color: var(--text-primary);
 }
 
-/* ════════════════════════════════════════
-   LIVE MAP
-════════════════════════════════════════ */
 .map-wrapper { position: relative; }
 
 #flight-map {
@@ -452,7 +427,6 @@ a { color: inherit; }
 .legend-dot.dep { background: #22d3ee; box-shadow: 0 0 6px #22d3ee; }
 .legend-dot.arr { background: #818cf8; box-shadow: 0 0 6px #818cf8; }
 
-/* Leaflet dark tile override */
 .leaflet-tile-pane { filter: brightness(0.7) contrast(1.1) saturate(0.7) hue-rotate(180deg); }
 [data-theme="light"] .leaflet-tile-pane { filter: none; }
 
@@ -476,9 +450,6 @@ a { color: inherit; }
 
 .leaflet-control-attribution { font-size: 9px !important; opacity: 0.5; }
 
-/* ════════════════════════════════════════
-   METAR / WEATHER PANEL
-════════════════════════════════════════ */
 .weather-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -605,9 +576,6 @@ a { color: inherit; }
   opacity: 0.4;
 }
 
-/* ════════════════════════════════════════
-   UTILITY
-════════════════════════════════════════ */
 .hidden { display: none !important; }
 
 footer { border-color: var(--glass-border); }
