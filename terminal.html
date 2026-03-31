@@ -15,12 +15,25 @@
     --term-cyan: #22d3ee;
     --term-text: #e5e7eb;
     --term-dim: rgba(229, 231, 235, 0.5);
+    --input-bg: rgba(255, 255, 255, 0.03);
+  }
+
+  [data-theme="light"] {
+    --term-bg: #f4f4f5;
+    --term-green: #166534;
+    --term-blue: #1e40af;
+    --term-purple: #6b21a8;
+    --term-cyan: #155e75;
+    --term-text: #18181b;
+    --term-dim: rgba(0, 0, 0, 0.6);
+    --input-bg: rgba(0, 0, 0, 0.05);
   }
 
   body {
     margin: 0;
     background-color: var(--term-bg);
     color: var(--term-text);
+    transition: background-color 0.2s ease, color 0.2s ease;
     font-family: 'Fira Code', 'Ubuntu Mono', 'Source Code Pro', 'Courier New', monospace;
     display: flex;
     flex-direction: column;
@@ -39,6 +52,10 @@
     z-index: 10;
     background-size: 100% 3px, 3px 100%;
     pointer-events: none;
+  }
+
+  [data-theme="light"] body::before {
+    opacity: 0.1;
   }
 
   #terminal {
@@ -130,22 +147,58 @@
 
 <script>
 
-const VFS = {
-  "README.md": "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/README.md",
-  "index.html": "https://github.com/xaviershilosaputra/OpenAero/blob/main/index.html",
-  "terminal.html": "https://github.com/xaviershilosaputra/OpenAero/blob/main/terminal.html",
-  "js": {
-    "script.js": "https://github.com/xaviershilosaputra/OpenAero/blob/main/js/script.js"
+const CONFIG = {
+  API: {
+    KEY: "2582c5cc9b95a3ce51c21525ff6a4063",
+    BASE_URL: "https://api.aviationstack.com/v1/flights"
   },
-  "css": {
-    "styles.css": "https://github.com/xaviershilosaputra/OpenAero/blob/main/css/styles.css"
+
+  SYSTEM: {
+    USER: "openaero",
+    ROOT_USER: "root",
+    HOST: "tracker",
+    KERNEL: "5.15.0-generic",
+    OS: "OpenAero Linux v1.1"
   },
-  "docs": {
-    "CONTRIBUTING.md": "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/docs/CONTRIBUTING.md"
+
+  URLS: {
+    GITHUB_REPO: "https://github.com/xaviershilosaputra/OpenAero",
+    DOCS: "https://github.com/youruser/openaero",
+    API_PING: "https://api.github.com"
+  },
+
+  THEME: {
+    STORAGE_KEY: "openaero-theme",
+    MODES: ["dark", "light", "auto"]
+  },
+
+  COMMANDS: [
+    "search", "help", "clear", "exit", "theme", "guide",
+    "ls", "cd", "cat", "sudo", "uname", "neofetch",
+    "ping", "whoami", "history"
+  ],
+
+  AUTH: {
+    SUDO_PASSWORD: "admin123"
+  },
+
+  VFS: {
+    "README.md": "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/README.md",
+    "index.html": "https://github.com/xaviershilosaputra/OpenAero/blob/main/index.html",
+    "terminal.html": "https://github.com/xaviershilosaputra/OpenAero/blob/main/terminal.html",
+    "js": {
+      "script.js": "https://github.com/xaviershilosaputra/OpenAero/blob/main/js/script.js"
+    },
+    "css": {
+      "styles.css": "https://github.com/xaviershilosaputra/OpenAero/blob/main/css/styles.css"
+    },
+    "docs": {
+      "CONTRIBUTING.md": "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/docs/CONTRIBUTING.md"
+    }
   }
 };
 
-let currentDir = VFS;
+let currentDir = CONFIG.VFS;
 let currentPath = "~";
 let isSudo = false;
 
@@ -156,8 +209,9 @@ function sanitize(str) {
 }
 
 function updatePrompt() {
-  const user = isSudo ? "root" : "openaero";
-  const host = "tracker";
+  const user = isSudo ? CONFIG.SYSTEM.ROOT_USER : CONFIG.SYSTEM.USER;
+  const host = CONFIG.SYSTEM.HOST;
+
   document.getElementById("prompt").innerHTML =
     `<span style="color:#4ade80">${user}</span>@` +
     `<span style="color:#60a5fa">${host}</span>:` +
@@ -179,7 +233,7 @@ function applyTheme(theme, persist = true) {
 
   if (persist && theme !== undefined) {
     try {
-      localStorage.setItem("openaero-theme", theme);
+      localStorage.setItem(CONFIG.THEME.STORAGE_KEY, theme);
     } catch (_) {}
   }
 }
@@ -188,14 +242,14 @@ function initTheme() {
   let stored = null;
 
   try {
-    stored = localStorage.getItem("openaero-theme");
+    stored = localStorage.getItem(CONFIG.THEME.STORAGE_KEY);
   } catch (_) {}
 
   applyTheme(stored || "auto", false);
 
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   media.addEventListener("change", () => {
-    const current = localStorage.getItem("openaero-theme");
+    const current = localStorage.getItem(CONFIG.THEME.STORAGE_KEY);
 
     if (!current || current === "auto") {
       applyTheme("auto", false);
@@ -205,9 +259,6 @@ function initTheme() {
 
 const term = document.getElementById("terminal");
 const input = document.getElementById("cmd");
-
-const API_KEY = "2582c5cc9b95a3ce51c21525ff6a4063";
-const BASE = "https://api.aviationstack.com/v1/flights";
 
 let commandHistory = [];
 let historyIndex = -1;
@@ -240,7 +291,7 @@ input.addEventListener("keydown", async e => {
     e.preventDefault();
     const current = input.value.toLowerCase();
     const commands = ["search", "help", "clear", "exit", "theme", "guide", "ls", "cd", "cat", "sudo", "uname", "neofetch", "ping", "whoami", "history"];
-    const match = commands.find(c => c.startsWith(current));
+    const match = CONFIG.COMMANDS.find(c => c.startsWith(current));
     if (match) input.value = match + " ";
   }
 });
@@ -291,7 +342,7 @@ async function banner() {
   await print("[[c]]Welcome to OpenAero OS v1.1.0-release (kernel 5.15.0-generic)[[r]]");
   await print(`System information as of ${now}`);
   await print("");
-  await print(" * Documentation:  https://github.com/youruser/openaero");
+  await print(` * Documentation:  ${CONFIG.URLS.DOCS}`);
   await print(" * Management:     Terminal View (CLI Active)");
   await print(" * Support:        Open Source Community");
   await print("");
@@ -321,8 +372,8 @@ async function help() {
   await print("  [[g]]ping <host>[[r]]    Test your real-time connection to the web");
   await print("  [[g]]uname[[r]]          Show the current OS kernel version");
   await print("");
-  await print("[[b]]Terminal Control:[[r]]");
-  await print("  [[g]]theme <mode>[[r]]   Change look to [[c]]dark, light,[[r]] or [[c]]auto[[r]]");
+  await print("[[b]]General & UI Control:[[r]]");
+  await print("  [[g]]theme <mode>[[r]]   Set [[c]]dark, light,[[r]] or [[c]]auto[[r]]");
   await print("  [[g]]clear[[r]]           Empty the terminal screen");
   await print("  [[g]]exit[[r]]            Close the terminal and return home");
   await print("");
@@ -337,7 +388,7 @@ async function searchFlight(flight) {
   await print("Fetching flight telemetry...");
   
   try {
-    const url = `${BASE}?access_key=${API_KEY}&flight_iata=${encodeURIComponent(flight)}`;
+    const url = `${CONFIG.API.BASE_URL}?access_key=${CONFIG.API.KEY}&flight_iata=${encodeURIComponent(flight)}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -389,20 +440,15 @@ async function handleCommand(cmd) {
 
   if (base === "theme") {
     const mode = parts[1];
-
-    if (!mode || !["dark", "light", "auto"].includes(mode)) {
-        await print("Usage: theme <dark|light|auto>");
-        return;
+    if (!mode || !CONFIG.THEME.MODES.includes(mode)) {
+      await print("Usage: theme <dark|light|auto>");
+      return;
     }
 
     applyTheme(mode, true);
 
-    if (mode === "auto") {
-        await print("Theme reset → following system preference");
-    } else {
-        await print(`Theme overridden → ${mode}`);
-    }
-
+    await print(`[[g]]System:[[r]] Global UI theme set to [[b]]${mode.toUpperCase()}[[r]]`);
+    await print(`[[c]]Notice:[[r]] Contrast and font colors adjusted for ${mode} mode.`);
     return;
   }
 
@@ -497,7 +543,7 @@ async function handleCommand(cmd) {
     }
     
     const pass = prompt("[sudo] password for openaero:");
-    if (pass !== "admin123") {
+    if (pass !== CONFIG.AUTH.SUDO_PASSWORD) {
       await print("sudo: 1 incorrect password attempt");
       return;
     }
@@ -509,7 +555,7 @@ async function handleCommand(cmd) {
     await print("[[g]]Session promoted to ROOT.[[r]] Opening Repository...");
     
     setTimeout(() => {
-      window.open("https://github.com/xaviershilosaputra/OpenAero", "_blank");
+      window.open(CONFIG.URLS.GITHUB_REPO, "_blank");
     }, 1000);
     return;
   }
@@ -525,7 +571,7 @@ async function handleCommand(cmd) {
   }
 
   if (base === "neofetch") {
-    const theme = localStorage.getItem("openaero-theme") || "auto";
+    const theme = localStorage.getItem(CONFIG.THEME.STORAGE_KEY) || "auto";
     const user = isSudo ? "root" : "openaero";
     
     const uptimeMins = Math.floor((performance.now() / 60000));
@@ -536,13 +582,13 @@ async function handleCommand(cmd) {
     await print("[[c]]  --- \\____\\\\        [[r]] [[p]]OS:[[r]] OpenAero Linux v1.1");
     await print("[[c]]  --- /     \\\\       [[r]] [[p]]Kernel:[[r]] 5.15.0-vfs");
     await print("[[c]]  -- /______//       [[r]] [[p]]Uptime:[[r]] " + uptimeStr);
-    await print("[[c]]    \\______/         [[r]] [[p]]Theme:[[r]] " + theme);
-    await print("[[c]]                      [[r]] [[p]]Uplink:[[r]] Active (AviationStack)");
+    await print("[[c]]    \\______/         [[r]] [[p]]Theme:[[r]] " + theme.toUpperCase());
+    await print("[[c]]                     [[r]] [[p]]Uplink:[[r]] Active (AviationStack)");
     return;
   }
 
   if (base === "ping") {
-    const host = "https://api.github.com";
+    const host = CONFIG.URLS.API_PING;
     await print(`PING ${host} via HTTPS/GET...`);
 
     for (let i = 0; i < 3; i++) {
@@ -584,7 +630,7 @@ async function handleCommand(cmd) {
 }
 
 window.addEventListener("storage", (e) => {
-  if (e.key === "openaero-theme") {
+  if (e.key === CONFIG.THEME.STORAGE_KEY) {
     applyTheme(e.newValue || "dark");
     print(`[system] Theme synced: ${e.newValue}`);
   }
