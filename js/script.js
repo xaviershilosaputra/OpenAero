@@ -1,23 +1,15 @@
 (() => {
   "use strict";
 
-  /* ════════════════════════════════════════
-     CONFIG
-  ════════════════════════════════════════ */
+  /* CONFIG */
   const FLIGHT_REGEX = /^[A-Z0-9]{2,3}[0-9]{1,4}[A-Z]?$/i;
   const AVIATIONSTACK_KEY = "2582c5cc9b95a3ce51c21525ff6a4063";
   const AVIATIONSTACK_BASE = "https://api.aviationstack.com/v1/flights";
 
-  /* Open-Meteo: free, no key needed */
   const OPENMETEO_BASE = "https://api.open-meteo.com/v1/forecast";
 
-  /* Aviation Weather Center METAR: free CORS-friendly endpoint */
   const AWC_METAR_BASE = "https://aviationweather.gov/api/data/metar";
 
-  /* ════════════════════════════════════════
-     AIRPORT COORDINATE LOOKUP
-     (subset of major airports for demo / fallback)
-  ════════════════════════════════════════ */
   const AIRPORT_COORDS = {
     SIN: { lat: 1.3644,   lon: 103.9915, name: "Singapore Changi" },
     LHR: { lat: 51.4775,  lon: -0.4614,  name: "London Heathrow" },
@@ -62,9 +54,6 @@
     AKL: { lat: -37.0082, lon: 174.7850, name: "Auckland Intl" },
   };
 
-  /* ════════════════════════════════════════
-     DEMO FLIGHT DATA (used when no API key)
-  ════════════════════════════════════════ */
   const DEMO_DATA = [
     {
       flight: { iata: "SQ322", number: "322" },
@@ -102,9 +91,6 @@
     },
   ];
 
-  /* ════════════════════════════════════════
-     DOM HELPERS
-  ════════════════════════════════════════ */
   const el   = (id) => document.getElementById(id);
   const show = (id) => el(id).classList.remove("hidden");
   const hide = (id) => el(id).classList.add("hidden");
@@ -133,9 +119,6 @@
     requestAnimationFrame(() => { r.textContent = msg; });
   }
 
-  /* ════════════════════════════════════════
-     FLIGHT STATUS HELPERS
-  ════════════════════════════════════════ */
   function normalizeStatus(raw) {
     if (!raw) return "unknown";
     const map = { active: "active", landed: "landed", scheduled: "scheduled", cancelled: "cancelled", incident: "cancelled", diverted: "delayed" };
@@ -150,9 +133,6 @@
     return `<span class="status-badge status-${sanitize(status)}">${sanitize(statusLabel(status))}</span>`;
   }
 
-  /* ════════════════════════════════════════
-     INPUT VALIDATION
-  ════════════════════════════════════════ */
   function validateInput(raw) {
     const value = raw.trim().toUpperCase();
     if (!value) return { valid: false, error: "Please enter a flight number.", value: "" };
@@ -171,9 +151,6 @@
     el("error-msg").textContent = "";
   }
 
-  /* ════════════════════════════════════════
-     FLIGHT API
-  ════════════════════════════════════════ */
   async function fetchFlights(flightNumber) {
     if (AVIATIONSTACK_KEY === "YOUR_AVIATIONSTACK_API_KEY") {
       await new Promise(r => setTimeout(r, 1000));
@@ -192,9 +169,6 @@
     return Array.isArray(data.data) ? data.data : [];
   }
 
-  /* ════════════════════════════════════════
-     METAR API  (Aviation Weather Center, free, no key)
-  ════════════════════════════════════════ */
   async function fetchMetar(icaoOrIata) {
     try {
       const url = `${AWC_METAR_BASE}?ids=${encodeURIComponent(icaoOrIata)}&format=json&hours=1`;
@@ -207,9 +181,6 @@
     }
   }
 
-  /* ════════════════════════════════════════
-     OPEN-METEO WEATHER API  (free, no key)
-  ════════════════════════════════════════ */
   async function fetchOpenMeteo(lat, lon) {
     try {
       const params = new URLSearchParams({
@@ -243,9 +214,6 @@
     return dirs[Math.round(deg / 45) % 8];
   }
 
-  /* ════════════════════════════════════════
-     WEATHER PANEL BUILDER
-  ════════════════════════════════════════ */
   async function buildWeatherCard(iata, role) {
     const coords = AIRPORT_COORDS[iata];
     const metarPromise = fetchMetar(iata);
@@ -336,9 +304,6 @@
     lucide.createIcons();
   }
 
-  /* ════════════════════════════════════════
-     LEAFLET MAP
-  ════════════════════════════════════════ */
   let leafletMap = null;
   let mapLayers  = [];
 
@@ -431,9 +396,6 @@
     setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 300);
   }
 
-  /* ════════════════════════════════════════
-     RESULT CARD BUILDER
-  ════════════════════════════════════════ */
   function buildResultCard(flight, index) {
     const status  = normalizeStatus(flight.flight_status);
     const dep     = flight.departure || {};
@@ -483,9 +445,6 @@
     `;
   }
 
-  /* ════════════════════════════════════════
-     DETAIL CARD BUILDER
-  ════════════════════════════════════════ */
   function buildDetailCard(flight) {
     const status  = normalizeStatus(flight.flight_status);
     const dep     = flight.departure || {};
@@ -559,14 +518,8 @@
     `;
   }
 
-  /* ════════════════════════════════════════
-     STATE
-  ════════════════════════════════════════ */
   let currentResults = [];
 
-  /* ════════════════════════════════════════
-     RENDER RESULTS
-  ════════════════════════════════════════ */
   function renderResults(flights) {
     const grid = el("results-grid");
     grid.innerHTML = flights.map((f, i) => buildResultCard(f, i)).join("");
@@ -591,9 +544,6 @@
     updateLiveRegion(`Showing detail for flight ${flight.flight?.iata || ""}`);
   }
 
-  /* ════════════════════════════════════════
-     AVGEEK LINK UPDATER
-  ════════════════════════════════════════ */
   function updateAvgeekLinks(flightNumber) {
     const enc = encodeURIComponent(flightNumber);
     el("link-fr24").href = `https://www.flightradar24.com/data/flights/${enc}`;
@@ -601,7 +551,7 @@
     el("link-ps").href   = `https://www.planespotters.net/search?q=${enc}`;
     // New dynamic links
     el("link-latc").href = `https://www.liveatc.net/search/?icao=${enc}`; 
-    el("link-sv").href   = `https://skyvector.com/?ll=20,0&chart=301&zoom=3`; // General view, as SkyVector doesn't support direct flight # search via URL as easily
+    el("link-sv").href   = `https://skyvector.com/?ll=20,0&chart=301&zoom=3`;
   }
 
   function resetAvgeekLinks() {
@@ -612,9 +562,6 @@
     el("link-sv").href   = "https://skyvector.com";
   }
 
-  /* ════════════════════════════════════════
-     MAIN SEARCH HANDLER
-  ════════════════════════════════════════ */
   async function handleSearch() {
     clearInputError();
     const { valid, error, value } = validateInput(el("flight-input").value);
@@ -665,9 +612,6 @@
     }
   }
 
-  /* ════════════════════════════════════════
-     EVENT LISTENERS
-  ════════════════════════════════════════ */
   function initSearch() {
     el("search-btn").addEventListener("click", handleSearch);
     el("flight-input").addEventListener("keydown", e => { if (e.key === "Enter") handleSearch(); });
@@ -694,10 +638,6 @@
       updateLiveRegion("Back to results.");
     });
   }
-
-/* ════════════════════════════════════════
-   THEME (SYNCED WITH TERMINAL)
-════════════════════════════════════════ */
 
     function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
@@ -747,7 +687,6 @@
         try {
             await navigator.clipboard.writeText(metar);
             
-            // Brief visual feedback
             const icon = btn.querySelector("i");
             const originalInner = btn.innerHTML;
             btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-cyan-400"></i>`;
@@ -763,9 +702,6 @@
         });
     }
 
-  /* ════════════════════════════════════════
-     INIT
-  ════════════════════════════════════════ */
   function init() {
     initTheme();
     initSearch();
