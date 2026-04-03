@@ -42,7 +42,7 @@ OpenAero is a client side application. No database or backend server is required
 ### Installation
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/yourusername/openaero.git](https://github.com/yourusername/openaero.git)
+   git clone [https://github.com/xaviershilosaputra/OpenAero.git](https://github.com/xaviershilosaputra/OpenAero.git)
    cd openaero
 
 ## Contributing
