@@ -88,7 +88,6 @@
   <div class="scanlines" aria-hidden="true"></div>
   <div class="radar-bg"   aria-hidden="true"></div>
 
-  <!-- HEADER -->
   <header class="glass-panel border-b sticky top-0 z-50" role="banner">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
@@ -172,7 +171,6 @@
 
     <div aria-live="polite" aria-atomic="true" id="results-live-region" class="sr-only"></div>
 
-    <!-- Loading -->
     <section id="loading-section" class="hidden mb-8" aria-label="Loading flight data">
       <div class="glass-panel rounded-2xl p-10 max-w-2xl mx-auto text-center">
         <div class="radar-spinner mx-auto mb-4" aria-hidden="true"></div>
@@ -181,7 +179,6 @@
       </div>
     </section>
 
-    <!-- Results -->
     <section id="results-section" class="hidden mb-8" aria-labelledby="results-heading">
       <div class="flex items-center justify-between mb-4">
         <h2 id="results-heading" class="font-mono text-sm tracking-widest uppercase opacity-60">
@@ -195,7 +192,6 @@
       <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" role="list" aria-label="Flight results"></div>
     </section>
 
-    <!-- Detail -->
     <section id="detail-section" class="hidden mb-8" aria-labelledby="detail-heading">
       <div class="flex items-center gap-3 mb-4">
         <button id="back-btn" class="btn-ghost font-mono text-xs" type="button" aria-label="Back to results">
@@ -207,18 +203,16 @@
       <div id="detail-card" class="glass-panel rounded-2xl p-6 lg:p-8" role="region" aria-label="Flight detail information"></div>
     </section>
 
-    <!-- Empty -->
     <section id="empty-section" class="hidden mb-8" aria-label="No results found">
       <div class="glass-panel rounded-2xl p-12 max-w-md mx-auto text-center">
         <div class="empty-icon mx-auto mb-4" aria-hidden="true">
-          <i data-lucide="plane-off" class="w-8 h-8 opacity-30"></i>
+          <i data-lucide="plane" class="w-8 h-8 opacity-30"></i>
         </div>
         <h2 class="font-mono font-bold mb-2">No Flights Found</h2>
         <p class="text-sm opacity-50">No data returned for this flight number. Try a different number or check the format.</p>
       </div>
     </section>
 
-    <!-- ════ LIVE MAP ════ -->
     <section id="map-section" class="hidden mb-12" aria-labelledby="map-heading">
       <div class="section-label mb-4">
         <h2 id="map-heading" class="font-mono text-xs tracking-widest uppercase opacity-60">Live Route Map</h2>
@@ -233,7 +227,6 @@
       </div>
     </section>
 
-    <!-- ════ METAR + WEATHER ════ -->
     <section id="weather-section" class="hidden mb-12" aria-labelledby="weather-heading">
       <div class="section-label mb-4">
         <h2 id="weather-heading" class="font-mono text-xs tracking-widest uppercase opacity-60">Airport Weather &amp; METAR</h2>
@@ -248,7 +241,6 @@
       <div id="weather-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
     </section>
 
-    <!-- ════ AVGEEK MODE ════ -->
     <section id="avgeek-section" class="mt-16" aria-labelledby="avgeek-heading">
     <div class="section-label mb-6">
         <h2 id="avgeek-heading" class="font-mono text-xs tracking-widest uppercase opacity-60">
@@ -383,7 +375,7 @@
     </div>
     </section>
 
-    <!-- ════ FAQ (SEO content) ════ -->
+    <!-- FAQ -->
     <section class="mt-20" aria-labelledby="faq-heading">
       <div class="section-label mb-6">
         <h2 id="faq-heading" class="font-mono text-xs tracking-widest uppercase opacity-60">Frequently Asked Questions (FAQ)</h2>
@@ -395,6 +387,14 @@
           <p class="text-xs opacity-60 leading-relaxed">Enter the IATA flight number (e.g. SQ322) in the search bar. OpenAero fetches live status, departure and arrival times, METAR weather at both airports, and plots the route on an interactive map.</p>
         </div>
         <div class="glass-panel rounded-xl p-5">
+          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">Why is my flight not appearing?</h3>
+          <p class="text-xs opacity-60 leading-relaxed">Ensure you are using the IATA code (2 letters, e.g., AA) rather than the ICAO code (3 letters, e.g., AAL). Some charter or cargo flights may not be available in the public database.</p>
+        </div>
+        <div class="glass-panel rounded-xl p-5">
+          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">Is the data real-time?</h3>
+          <p class="text-xs opacity-60 leading-relaxed">We use the Aviationstack API for flight data. While we aim for live updates, please note that there can be a 10–30 minute delay compared to airport flight boards depending on the carrier.</p>
+        </div>
+        <div class="glass-panel rounded-xl p-5">
           <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">What is a flight number?</h3>
           <p class="text-xs opacity-60 leading-relaxed">A flight number is a unique identifier assigned to each flight by an airline. It typically consists of two letters (the airline code) followed by numbers (the flight route identifier).</p>
         </div>
@@ -403,12 +403,8 @@
           <p class="text-xs opacity-60 leading-relaxed">METAR is the global standard for aviation weather observation. It encodes wind speed and direction, visibility, cloud cover, temperature, dewpoint, and altimeter setting. Pilots and air traffic controllers use it worldwide.</p>
         </div>
         <div class="glass-panel rounded-xl p-5">
-          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">Is OpenAero free?</h3>
-          <p class="text-xs opacity-60 leading-relaxed">Yes. OpenAero is fully client-side and uses free public APIs including the Aviationstack free tier and Open-Meteo. No account, no sign-up, no cost. Works on any static host including GitHub Pages.</p>
-        </div>
-        <div class="glass-panel rounded-xl p-5">
-          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">Is OpenAero open-source?</h3>
-          <p class="text-xs opacity-60 leading-relaxed">Yes. OpenAero is fully open-source and available on GitHub. Feel free to contribute or fork the project!</p>
+          <h3 class="font-mono font-bold text-sm mb-2 text-cyan-400">Is OpenAero free & private?</h3>
+          <p class="text-xs opacity-60 leading-relaxed">Yes. OpenAero is open-source and free. Since it is a client-side app, your search history stays in your browser; we don't track your data or require an account.</p>
         </div>
       </div>
     </section>
@@ -425,7 +421,7 @@
   </footer>
 
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN2GRnc=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/script.js"></script>
 </body>
 </html>
