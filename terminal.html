@@ -5,6 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenAero Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
   :root {
@@ -14,26 +17,49 @@
     --term-purple: #a78bfa;
     --term-cyan: #22d3ee;
     --term-text: #e5e7eb;
-    --term-dim: rgba(229, 231, 235, 0.5);
+    --term-dim: rgba(229, 231, 235, 0.45);
     --input-bg: rgba(255, 255, 255, 0.03);
+    --input-border: rgba(34, 211, 238, 0.12);
+    --scrollbar-thumb: #22d3ee;
+    --crt-line1: rgba(18, 16, 16, 0);
+    --crt-line2: rgba(0, 0, 0, 0.1);
+    --crt-r: rgba(255, 0, 0, 0.03);
+    --crt-g: rgba(0, 255, 0, 0.01);
+    --crt-b: rgba(0, 0, 255, 0.03);
+    --text-shadow: 0 0 5px rgba(34, 211, 238, 0.25);
   }
 
   [data-theme="light"] {
-    --term-bg: #f4f4f5;
-    --term-green: #166534;
-    --term-blue: #1e40af;
-    --term-purple: #6b21a8;
-    --term-cyan: #155e75;
-    --term-text: #18181b;
-    --term-dim: rgba(0, 0, 0, 0.6);
-    --input-bg: rgba(0, 0, 0, 0.05);
+    --term-bg:      #c8bfb0;
+    --term-surface: #bdb3a3;
+    --term-green:   #1e5c2a;
+    --term-blue:    #14427a;
+    --term-purple:  #5a1f8a;
+    --term-cyan:    #0a5c70;
+    --term-text:    #1a1714;
+    --term-dim:     rgba(26, 23, 20, 0.55);
+    --input-bg:     rgba(0, 0, 0, 0.08);
+    --input-border: rgba(10, 92, 112, 0.22);
+    --scrollbar-thumb: #0a5c70;
+    --crt-line1: rgba(180, 170, 155, 0);
+    --crt-line2: rgba(0, 0, 0, 0.025);
+    --crt-r: rgba(80, 40, 0, 0.006);
+    --crt-g: rgba(0, 50, 20, 0.004);
+    --crt-b: rgba(0, 30, 80, 0.006);
+    --text-shadow: none;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
   }
 
   body {
-    margin: 0;
     background-color: var(--term-bg);
     color: var(--term-text);
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.25s ease, color 0.25s ease;
     font-family: 'Fira Code', 'Ubuntu Mono', 'Source Code Pro', 'Courier New', monospace;
     display: flex;
     flex-direction: column;
@@ -46,49 +72,74 @@
     content: " ";
     display: block;
     position: absolute;
-    top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    inset: 0;
+    background:
+      linear-gradient(var(--crt-line1) 50%, var(--crt-line2) 50%),
+      linear-gradient(90deg, var(--crt-r), var(--crt-g), var(--crt-b));
     z-index: 10;
     background-size: 100% 3px, 3px 100%;
     pointer-events: none;
   }
 
-  [data-theme="light"] body::before {
-    opacity: 0.1;
+  [data-theme="light"] body::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9;
+    background-image:
+      radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.12) 100%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+    background-size: 100% 100%, 160px 160px;
+    opacity: 0.7;
   }
 
   #terminal {
-    padding: 25px;
+    padding: 28px 30px 16px;
     flex: 1;
     overflow-y: auto;
     white-space: pre-wrap;
-    line-height: 1.4;
-    text-shadow: 0 0 5px rgba(34, 211, 238, 0.3);
+    line-height: 1.55;
+    font-size: 14px;
+    text-shadow: var(--text-shadow);
     scrollbar-width: thin;
-    scrollbar-color: var(--term-cyan) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
 
-  #terminal::-webkit-scrollbar { width: 6px; }
-  #terminal::-webkit-scrollbar-thumb { background: var(--term-cyan); border-radius: 10px; }
+  #terminal::-webkit-scrollbar { width: 5px; }
+  #terminal::-webkit-scrollbar-track { background: transparent; }
+  #terminal::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 10px;
+    opacity: 0.6;
+  }
 
-  .line { 
-    margin-bottom: 4px; 
-    animation: fadeIn 0.1s ease-in;
+  .line {
+    margin-bottom: 2px;
+    animation: fadeIn 0.08s ease-in;
   }
 
   #input-line {
     display: flex;
     align-items: center;
-    padding: 15px 25px;
-    background: rgba(255, 255, 255, 0.03);
-    border-top: 1px solid rgba(34, 211, 238, 0.1);
+    padding: 14px 30px;
+    background: var(--input-bg);
+    border-top: 1px solid var(--input-border);
     z-index: 20;
+    gap: 0;
+  }
+
+  [data-theme="light"] #input-line {
+    background: var(--term-surface);
+    border-top: 1px solid rgba(10, 92, 112, 0.2);
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.12) inset;
   }
 
   #prompt {
-    font-weight: bold;
-    letter-spacing: 0.5px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   #cmd {
@@ -97,41 +148,46 @@
     border: none;
     color: var(--term-cyan);
     font-family: inherit;
-    font-size: 15px;
+    font-size: 14px;
     outline: none;
     padding-left: 2px;
     caret-color: var(--term-green);
+    min-width: 0;
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(2px); }
-    to { opacity: 1; transform: translateY(0); }
+  [data-theme="light"] #cmd {
+    color: var(--term-text);
+    caret-color: var(--term-cyan);
   }
 
-  .separator {
-    color: var(--term-dim);
-    letter-spacing: -1px;
-  }
-
-  .highlight { color: var(--term-purple); }
-  .success { color: var(--term-green); }
-
-  #cmd {
-    caret-shape: block;
-    caret-color: var(--term-green);
-  }
-
-  #input-line::after {
-    content: "_";
+  #cursor-blink {
     animation: blink 1s infinite;
     color: var(--term-green);
     font-weight: bold;
+    font-size: 15px;
+    line-height: 1;
+    user-select: none;
   }
 
-  @keyframes blink { 
-    0%, 100% { opacity: 1; } 
-    50% { opacity: 0; } 
+  [data-theme="light"] #cursor-blink {
+    color: var(--term-cyan);
   }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(1px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+
+  [data-theme="light"] .prompt-user  { color: var(--term-green) !important; }
+  [data-theme="light"] .prompt-host  { color: var(--term-blue)  !important; }
+  [data-theme="light"] .prompt-path  { color: var(--term-purple) !important; }
+  [data-theme="light"] .prompt-sigil { color: var(--term-dim); }
+
 </style>
 
 </head>
@@ -141,8 +197,9 @@
 <div id="terminal"></div>
 
 <div id="input-line">
-  <span class="prompt" id="prompt"></span>
-  <input id="cmd" autofocus autocomplete="off" />
+  <span id="prompt"></span>
+  <input id="cmd" autofocus autocomplete="off" spellcheck="false" />
+  <span id="cursor-blink">▋</span>
 </div>
 
 <script>
@@ -174,7 +231,7 @@ const CONFIG = {
 
   COMMANDS: [
     "search", "help", "clear", "exit", "theme", "guide",
-    "ls", "cd", "cat", "sudo", "uname", "neofetch",
+    "weather", "ls", "cd", "cat", "sudo", "uname", "neofetch",
     "ping", "whoami", "history"
   ],
 
@@ -208,95 +265,101 @@ function sanitize(str) {
   return div.innerHTML;
 }
 
+function getTheme() {
+  try { return localStorage.getItem(CONFIG.THEME.STORAGE_KEY) || "auto"; } catch(_) { return "auto"; }
+}
+
 function updatePrompt() {
-  const user = isSudo ? CONFIG.SYSTEM.ROOT_USER : CONFIG.SYSTEM.USER;
-  const host = CONFIG.SYSTEM.HOST;
+  const user  = isSudo ? CONFIG.SYSTEM.ROOT_USER : CONFIG.SYSTEM.USER;
+  const host  = CONFIG.SYSTEM.HOST;
+  const sigil = isSudo ? '#' : '$';
 
   document.getElementById("prompt").innerHTML =
-    `<span style="color:#4ade80">${user}</span>@` +
-    `<span style="color:#60a5fa">${host}</span>:` +
-    `<span style="color:#a78bfa">${currentPath}</span>${isSudo ? '#' : '$'}&nbsp;`;
+    `<span class="prompt-user"  style="color:var(--term-green)">${user}</span>` +
+    `<span class="prompt-sigil" style="color:var(--term-dim)">@</span>` +
+    `<span class="prompt-host"  style="color:var(--term-blue)">${host}</span>` +
+    `<span class="prompt-sigil" style="color:var(--term-dim)">:</span>` +
+    `<span class="prompt-path"  style="color:var(--term-purple)">${currentPath}</span>` +
+    `<span class="prompt-sigil" style="color:var(--term-dim)">${sigil}&nbsp;</span>`;
 }
 
 updatePrompt();
 
 function applyTheme(theme, persist = true) {
   let resolved = theme;
-
   if (!theme || theme === "auto") {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    resolved = prefersDark ? "dark" : "light";
+    resolved = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
-
   document.documentElement.setAttribute("data-theme", resolved);
   document.body.setAttribute("data-theme", resolved);
-
   if (persist && theme !== undefined) {
-    try {
-      localStorage.setItem(CONFIG.THEME.STORAGE_KEY, theme);
-    } catch (_) {}
+    try { localStorage.setItem(CONFIG.THEME.STORAGE_KEY, theme); } catch(_) {}
   }
 }
 
 function initTheme() {
   let stored = null;
-
-  try {
-    stored = localStorage.getItem(CONFIG.THEME.STORAGE_KEY);
-  } catch (_) {}
-
+  try { stored = localStorage.getItem(CONFIG.THEME.STORAGE_KEY); } catch(_) {}
   applyTheme(stored || "auto", false);
-
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  media.addEventListener("change", () => {
-    const current = localStorage.getItem(CONFIG.THEME.STORAGE_KEY);
-
-    if (!current || current === "auto") {
-      applyTheme("auto", false);
-    }
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    const current = getTheme();
+    if (!current || current === "auto") applyTheme("auto", false);
   });
 }
 
-const term = document.getElementById("terminal");
+const term  = document.getElementById("terminal");
 const input = document.getElementById("cmd");
 
 let commandHistory = [];
-let historyIndex = -1;
+let historyIndex   = -1;
+
+const cursorEl = document.getElementById("cursor-blink");
+input.addEventListener("input", () => {
+  cursorEl.style.display = input.value.length ? "none" : "inline";
+});
+input.addEventListener("blur",  () => { cursorEl.style.display = "inline"; });
+input.addEventListener("focus", () => {
+  cursorEl.style.display = input.value.length ? "none" : "inline";
+});
 
 input.addEventListener("keydown", async e => {
   if (e.key === "Enter") {
     const cmd = input.value.trim();
     if (cmd) {
-      commandHistory.unshift(cmd); 
+      commandHistory.unshift(cmd);
       historyIndex = -1;
+      cursorEl.style.display = "inline";
       await handleCommand(cmd);
     }
     input.value = "";
+    cursorEl.style.display = "inline";
   } else if (e.key === "ArrowUp") {
     e.preventDefault();
     if (historyIndex < commandHistory.length - 1) {
       historyIndex++;
       input.value = commandHistory[historyIndex];
+      cursorEl.style.display = "none";
     }
   } else if (e.key === "ArrowDown") {
     e.preventDefault();
     if (historyIndex > 0) {
       historyIndex--;
       input.value = commandHistory[historyIndex];
+      cursorEl.style.display = "none";
     } else {
-      historyIndex = -1;
-      input.value = "";
+      historyIndex  = -1;
+      input.value   = "";
+      cursorEl.style.display = "inline";
     }
   } else if (e.key === "Tab") {
     e.preventDefault();
     const current = input.value.toLowerCase();
-    const commands = ["search", "help", "clear", "exit", "theme", "guide", "ls", "cd", "cat", "sudo", "uname", "neofetch", "ping", "whoami", "history"];
-    const match = CONFIG.COMMANDS.find(c => c.startsWith(current));
-    if (match) input.value = match + " ";
+    const match   = CONFIG.COMMANDS.find(c => c.startsWith(current));
+    if (match) { input.value = match + " "; cursorEl.style.display = "none"; }
   }
 });
 
-async function print(text = "", speed = 10) {
+async function print(text = "", speed = 8) {
   const div = document.createElement("div");
   div.className = "line";
   term.appendChild(div);
@@ -306,15 +369,14 @@ async function print(text = "", speed = 10) {
   div.appendChild(currentSpan);
 
   for (const part of parts) {
-    if (part === "[[g]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-green)"; div.appendChild(currentSpan); continue; }
-    if (part === "[[b]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-blue)"; div.appendChild(currentSpan); continue; }
+    if (part === "[[g]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-green)";  div.appendChild(currentSpan); continue; }
+    if (part === "[[b]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-blue)";   div.appendChild(currentSpan); continue; }
     if (part === "[[p]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-purple)"; div.appendChild(currentSpan); continue; }
-    if (part === "[[c]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-cyan)"; div.appendChild(currentSpan); continue; }
-    if (part === "[[r]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-text)"; div.appendChild(currentSpan); continue; }
+    if (part === "[[c]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-cyan)";   div.appendChild(currentSpan); continue; }
+    if (part === "[[r]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-text)";   div.appendChild(currentSpan); continue; }
 
     const safePart = sanitize(part);
     let i = 0;
-    
     while (i < safePart.length) {
       if (safePart[i] === '&') {
         const entityEnd = safePart.indexOf(';', i);
@@ -329,7 +391,6 @@ async function print(text = "", speed = 10) {
         currentSpan.innerHTML += safePart[i];
         i++;
       }
-
       term.scrollTop = term.scrollHeight;
       if (speed > 0) await new Promise(r => setTimeout(r, speed));
     }
@@ -356,6 +417,7 @@ async function help() {
   await print("");
   await print("[[b]]Flight Tracking:[[r]]");
   await print("  [[g]]search <ID>[[r]]  Track a specific flight (e.g., [[c]]search SQ322[[r]])");
+  await print("  [[g]]weather <ICAO>[[r]] Get airport weather (e.g., [[c]]weather WSSS[[r]])");
   await print("  [[g]]guide <topic>[[r]] Learn about [[c]]metar, flight,[[r]] or [[c]]status[[r]] data");
   await print("");
   await print("[[b]]File System (Browse Source Code):[[r]]");
@@ -386,17 +448,14 @@ function validateFlight(f) {
 async function searchFlight(flight) {
   await print("Connecting to aviationstack API...");
   await print("Fetching flight telemetry...");
-  
   try {
     const url = `${CONFIG.API.BASE_URL}?access_key=${CONFIG.API.KEY}&flight_iata=${encodeURIComponent(flight)}`;
-    const res = await fetch(url);
+    const res  = await fetch(url);
     const data = await res.json();
-
     if (!data.data || !data.data.length) {
       await print("[[p]]No results found for IDENT: [[r]]" + flight);
       return;
     }
-
     const f = data.data[0];
     await print("[[c]]--- TELEMETRY DATA RECOVERY ---[[r]]");
     await print(`[[p]]IDENT:[[r]]      ${f.flight?.iata || "N/A"}`);
@@ -416,37 +475,74 @@ async function searchFlight(flight) {
   }
 }
 
+const AIRPORT_DB = {
+  "WSSS": { lat: 1.3502, lon: 103.9945, name: "Singapore Changi" },
+  "KJFK": { lat: 40.6413, lon: -73.7781, name: "New York JFK" },
+  "EGLL": { lat: 51.4700, lon: -0.4543, name: "London Heathrow" },
+  "WMKK": { lat: 2.7456, lon: 101.7072, name: "Kuala Lumpur Intl" },
+  "VHHH": { lat: 22.3080, lon: 113.9185, name: "Hong Kong Intl" }
+};
+
+async function getCoords(icao) {
+  if (AIRPORT_DB[icao]) return AIRPORT_DB[icao];
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${icao}+airport`);
+    const data = await res.json();
+    if (data && data.length > 0) return { lat: data[0].lat, lon: data[0].lon, name: data[0].display_name.split(',')[0] };
+  } catch (e) { return null; }
+  return null;
+}
+
+async function fetchWeather(icao) {
+  await print(`Resolving coordinates for [[c]]${icao}[[r]]...`);
+  const loc = await getCoords(icao);
+  if (!loc) { await print("[[p]]Error:[[r]] Could not locate airport."); return; }
+  
+  await print(`Fetching Open-Meteo data for ${loc.name}...`);
+  try {
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,visibility`);
+    const data = await res.json();
+    const cur = data.current;
+
+    await print(`[[c]]--- WEATHER REPORT: ${icao} ---[[r]]`);
+    await print(`[[p]]LOCATION:[[r]]   ${loc.name}`);
+    await print(`[[p]]TEMP:[[r]]       ${cur.temperature_2m}°C`);
+    await print(`[[p]]WIND:[[r]]       ${cur.wind_speed_10m} km/h @ ${cur.wind_direction_10m}°`);
+    await print(`[[p]]HUMIDITY:[[r]]   ${cur.relative_humidity_2m}%`);
+    await print(`[[p]]VISIBILITY:[[r]] ${(cur.visibility / 1000).toFixed(1)} km`);
+    await print(`[[p]]PRESSURE:[[r]]   ${cur.surface_pressure} hPa`);
+    await print("");
+    await print(`[[b]]METAR (Synth):[[r]] ${icao} 000000Z ${cur.wind_direction_10m}${cur.wind_speed_10m}KT 9999 CLR ${cur.temperature_2m}/XX Q${Math.round(cur.surface_pressure)}`);
+    await print("[[c]]--------------------------------[[r]]");
+  } catch (e) { await print("[[p]]Error:[[r]] Failed to retrieve weather data."); }
+}
+
 async function handleCommand(cmd) {
   await print("[[g]]openaero[[r]]@[[b]]tracker[[r]]:[[p]]~[[r]]$ " + cmd, 0);
-  
   const parts = cmd.trim().split(" ");
-  const base = parts[0].toLowerCase();
+  const base  = parts[0].toLowerCase();
 
-  if (base === "help") return await help();
-  if (base === "clear") {
-    term.innerHTML = "";
-    return;
-  }
+  if (base === "help")  return await help();
+  if (base === "clear") { term.innerHTML = ""; return; }
 
   if (base === "search") {
     const flight = parts[1];
-    if (!flight || !validateFlight(flight)) {
-      await print("Invalid flight format. Example: SQ322");
-      return;
-    }
+    if (!flight || !validateFlight(flight)) { await print("Invalid flight format. Example: SQ322"); return; }
     await searchFlight(flight.toUpperCase());
+    return;
+  }
+
+  if (base === "weather") {
+    const icao = parts[1];
+    if (!icao || icao.length < 3) { await print("Usage: weather <ICAO> (e.g., weather WSSS)"); return; }
+    await fetchWeather(icao.toUpperCase());
     return;
   }
 
   if (base === "theme") {
     const mode = parts[1];
-    if (!mode || !CONFIG.THEME.MODES.includes(mode)) {
-      await print("Usage: theme <dark|light|auto>");
-      return;
-    }
-
+    if (!mode || !CONFIG.THEME.MODES.includes(mode)) { await print("Usage: theme <dark|light|auto>"); return; }
     applyTheme(mode, true);
-
     await print(`[[g]]System:[[r]] Global UI theme set to [[b]]${mode.toUpperCase()}[[r]]`);
     await print(`[[c]]Notice:[[r]] Contrast and font colors adjusted for ${mode} mode.`);
     return;
@@ -454,44 +550,35 @@ async function handleCommand(cmd) {
 
   if (base === "guide") {
     const topic = parts[1];
-
-    if (!topic) {
-        await print("Usage: guide <topic>");
-        await print("Topics: metar, flight, status");
-        return;
-    }
-
+    if (!topic) { await print("Usage: guide <topic>"); await print("Topics: metar, flight, status"); return; }
     if (topic === "metar") {
-        await print("METAR Guide:");
-        await print("  Example: METAR WSSS 121200Z 18010KT 9999 FEW020 30/24 Q1012");
-        await print("  WSSS    → Airport ICAO code");
-        await print("  121200Z → Date/time (12th day, 12:00 UTC)");
-        await print("  18010KT → Wind (180° at 10 knots)");
-        await print("  9999    → Visibility (10km+)");
-        await print("  FEW020  → Few clouds at 2000 ft");
-        await print("  30/24   → Temp/Dew point (°C)");
-        await print("  Q1012   → Pressure (hPa)");
-        return;
+      await print("METAR Guide:");
+      await print("  Example: METAR WSSS 121200Z 18010KT 9999 FEW020 30/24 Q1012");
+      await print("  WSSS    → Airport ICAO code");
+      await print("  121200Z → Date/time (12th day, 12:00 UTC)");
+      await print("  18010KT → Wind (180° at 10 knots)");
+      await print("  9999    → Visibility (10km+)");
+      await print("  FEW020  → Few clouds at 2000 ft");
+      await print("  30/24   → Temp/Dew point (°C)");
+      await print("  Q1012   → Pressure (hPa)");
+      return;
     }
-
     if (topic === "flight") {
-        await print("Flight Data Guide:");
-        await print("  Status: scheduled | active | landed | cancelled");
-        await print("  Delay: minutes behind schedule");
-        await print("  Gate/Terminal: boarding info");
-        await print("  Aircraft: plane type (e.g. B77W)");
-        return;
+      await print("Flight Data Guide:");
+      await print("  Status: scheduled | active | landed | cancelled");
+      await print("  Delay: minutes behind schedule");
+      await print("  Gate/Terminal: boarding info");
+      await print("  Aircraft: plane type (e.g. B77W)");
+      return;
     }
-
     if (topic === "status") {
-        await print("Status Guide:");
-        await print("  scheduled → not departed yet");
-        await print("  active    → currently flying");
-        await print("  landed    → arrived");
-        await print("  cancelled → flight cancelled");
-        return;
+      await print("Status Guide:");
+      await print("  scheduled → not departed yet");
+      await print("  active    → currently flying");
+      await print("  landed    → arrived");
+      await print("  cancelled → flight cancelled");
+      return;
     }
-
     await print("Unknown guide topic.");
     return;
   }
@@ -510,10 +597,10 @@ async function handleCommand(cmd) {
   if (base === "cd") {
     const target = parts[1];
     if (!target || target === "~" || target === "/" || target === "..") {
-      currentDir = VFS;
+      currentDir  = CONFIG.VFS;
       currentPath = "~";
     } else if (currentDir[target] && typeof currentDir[target] === "object") {
-      currentDir = currentDir[target];
+      currentDir  = currentDir[target];
       currentPath = `~/${target}`;
     } else {
       await print(`cd: folder not found: ${target}`);
@@ -528,8 +615,7 @@ async function handleCommand(cmd) {
       await print("usage: cat <file>");
     } else if (currentDir[file] && typeof currentDir[file] === "string") {
       await print(`[[c]]Reading remote source: ${file}...[[r]]`);
-      const url = currentDir[file];
-      window.open(url, "_blank");
+      window.open(currentDir[file], "_blank");
     } else {
       await print(`cat: ${file}: No such file or directory`);
     }
@@ -537,51 +623,32 @@ async function handleCommand(cmd) {
   }
 
   if (base === "sudo") {
-    if (isSudo) {
-      await print("Already running as root.");
-      return;
-    }
-    
+    if (isSudo) { await print("Already running as root."); return; }
     const pass = prompt("[sudo] password for openaero:");
-    if (pass !== CONFIG.AUTH.SUDO_PASSWORD) {
-      await print("sudo: 1 incorrect password attempt");
-      return;
-    }
-
+    if (pass !== CONFIG.AUTH.SUDO_PASSWORD) { await print("sudo: 1 incorrect password attempt"); return; }
     await print("[[p]]ALRT:[[r]] Elevated privileges requested.");
     await print("Logging into GitHub OpenAero Kernel...");
     isSudo = true;
     updatePrompt();
     await print("[[g]]Session promoted to ROOT.[[r]] Opening Repository...");
-    
-    setTimeout(() => {
-      window.open(CONFIG.URLS.GITHUB_REPO, "_blank");
-    }, 1000);
+    setTimeout(() => window.open(CONFIG.URLS.GITHUB_REPO, "_blank"), 1000);
     return;
   }
 
-  if (base === "whoami") {
-    await print(isSudo ? "root" : "openaero");
-    return;
-  }
+  if (base === "whoami") { await print(isSudo ? "root" : "openaero"); return; }
 
-  if (base === "uname") {
-    await print("OpenAero-OS 5.15.0-generic x86_64 GNU/Linux");
-    return;
-  }
+  if (base === "uname") { await print("OpenAero-OS 5.15.0-generic x86_64 GNU/Linux"); return; }
 
   if (base === "neofetch") {
-    const theme = localStorage.getItem(CONFIG.THEME.STORAGE_KEY) || "auto";
-    const user = isSudo ? "root" : "openaero";
-    
-    const uptimeMins = Math.floor((performance.now() / 60000));
-    const uptimeStr = uptimeMins > 0 ? `${uptimeMins}m` : "initial boot";
-
+    const theme   = getTheme();
+    const user    = isSudo ? "root" : "openaero";
+    const uptimeMins = Math.floor(performance.now() / 60000);
+    const uptimeStr  = uptimeMins > 0 ? `${uptimeMins}m` : "initial boot";
     await print("[[c]]     ______          [[r]] [[c]]" + user + "[[r]]@[[b]]openaero[[r]]");
     await print("[[c]]  -- \\____/\\         [[r]] ----------------");
     await print("[[c]]  --- \\____\\\\        [[r]] [[p]]OS:[[r]] OpenAero Linux v1.1");
     await print("[[c]]  --- /     \\\\       [[r]] [[p]]Kernel:[[r]] 5.15.0-vfs");
-    await print("[[c]]  -- /______//       [[r]] [[p]]Uptime:[[r]] " + uptimeStr);
+    await print("[[c]]  --- /______//       [[r]] [[p]]Uptime:[[r]] " + uptimeStr);
     await print("[[c]]    \\______/         [[r]] [[p]]Theme:[[r]] " + theme.toUpperCase());
     await print("[[c]]                     [[r]] [[p]]Uplink:[[r]] Active (AviationStack)");
     return;
@@ -590,13 +657,11 @@ async function handleCommand(cmd) {
   if (base === "ping") {
     const host = CONFIG.URLS.API_PING;
     await print(`PING ${host} via HTTPS/GET...`);
-
     for (let i = 0; i < 3; i++) {
       const start = performance.now();
       try {
         await fetch(host, { mode: 'no-cors' });
-        const end = performance.now();
-        const duration = (end - start).toFixed(2);
+        const duration = (performance.now() - start).toFixed(2);
         await print(`Reply from ${host}: time=${duration}ms status=OK`);
       } catch (e) {
         await print(`Request timeout for ${host}`);
@@ -607,22 +672,15 @@ async function handleCommand(cmd) {
   }
 
   if (base === "history") {
-    if (commandHistory.length === 0) {
-      await print("No history found.");
-      return;
-    }
+    if (!commandHistory.length) { await print("No history found."); return; }
     const historyCopy = [...commandHistory].reverse();
-    for (let i = 0; i < historyCopy.length; i++) {
-      await print(`  ${i + 1}  ${historyCopy[i]}`);
-    }
+    for (let i = 0; i < historyCopy.length; i++) await print(`  ${i + 1}  ${historyCopy[i]}`);
     return;
   }
 
   if (base === "exit") {
     await print("Exiting OpenAero Terminal...");
-    setTimeout(() => {
-        window.location.href = "index.html";
-    }, 500);
+    setTimeout(() => window.location.href = "index.html", 500);
     return;
   }
 
