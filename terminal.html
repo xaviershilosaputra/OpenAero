@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -8,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
-
 <style>
   :root {
     --term-bg: #0c0c0c;
@@ -50,11 +48,7 @@
   }
 
   *, *::before, *::after { box-sizing: border-box; }
-
-  html, body {
-    margin: 0;
-    height: 100%;
-  }
+  html, body { margin: 0; height: 100%; }
 
   body {
     background-color: var(--term-bg);
@@ -105,19 +99,11 @@
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) transparent;
   }
-
   #terminal::-webkit-scrollbar { width: 5px; }
   #terminal::-webkit-scrollbar-track { background: transparent; }
-  #terminal::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 10px;
-    opacity: 0.6;
-  }
+  #terminal::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; opacity: 0.6; }
 
-  .line {
-    margin-bottom: 2px;
-    animation: fadeIn 0.08s ease-in;
-  }
+  .line { margin-bottom: 2px; animation: fadeIn 0.08s ease-in; }
 
   #input-line {
     display: flex;
@@ -128,19 +114,13 @@
     z-index: 20;
     gap: 0;
   }
-
   [data-theme="light"] #input-line {
     background: var(--term-surface);
     border-top: 1px solid rgba(10, 92, 112, 0.2);
-    box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.12) inset;
+    box-shadow: 0 -1px 0 rgba(255,255,255,0.12) inset;
   }
 
-  #prompt {
-    font-weight: 500;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
+  #prompt { font-weight: 500; letter-spacing: 0.3px; white-space: nowrap; flex-shrink: 0; }
 
   #cmd {
     flex: 1;
@@ -154,11 +134,7 @@
     caret-color: var(--term-green);
     min-width: 0;
   }
-
-  [data-theme="light"] #cmd {
-    color: var(--term-text);
-    caret-color: var(--term-cyan);
-  }
+  [data-theme="light"] #cmd { color: var(--term-text); caret-color: var(--term-cyan); }
 
   #cursor-blink {
     animation: blink 1s infinite;
@@ -168,123 +144,77 @@
     line-height: 1;
     user-select: none;
   }
+  [data-theme="light"] #cursor-blink { color: var(--term-cyan); }
 
-  [data-theme="light"] #cursor-blink {
-    color: var(--term-cyan);
-  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(1px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes blink  { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(1px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0; }
-  }
-
-  [data-theme="light"] .prompt-user  { color: var(--term-green) !important; }
-  [data-theme="light"] .prompt-host  { color: var(--term-blue)  !important; }
+  [data-theme="light"] .prompt-user  { color: var(--term-green)  !important; }
+  [data-theme="light"] .prompt-host  { color: var(--term-blue)   !important; }
   [data-theme="light"] .prompt-path  { color: var(--term-purple) !important; }
   [data-theme="light"] .prompt-sigil { color: var(--term-dim); }
-
 </style>
-
 </head>
 
 <body>
-
 <div id="terminal"></div>
-
 <div id="input-line">
   <span id="prompt"></span>
   <input id="cmd" autofocus autocomplete="off" spellcheck="false" />
   <span id="cursor-blink">▋</span>
 </div>
 
+<script src="js/cache.js"></script>
 <script>
+"use strict";
+
+const { sanitize, fetchOpenMeteo, fetchFlights } = window.OpenAeroCache;
 
 const CONFIG = {
   API: {
-    KEY: "2582c5cc9b95a3ce51c21525ff6a4063",
-    BASE_URL: "https://api.aviationstack.com/v1/flights"
+    KEY:      "2582c5cc9b95a3ce51c21525ff6a4063",
+    BASE_URL: "https://api.aviationstack.com/v1/flights",
   },
-
   SYSTEM: {
-    USER: "openaero",
+    USER:      "openaero",
     ROOT_USER: "root",
-    HOST: "tracker",
-    KERNEL: "5.15.0-generic",
-    OS: "OpenAero Linux v1.1"
+    HOST:      "tracker",
+    OS:        "OpenAero Linux v1.1",
   },
-
   URLS: {
     GITHUB_REPO: "https://github.com/xaviershilosaputra/OpenAero",
-    DOCS: "https://github.com/youruser/openaero",
-    API_PING: "https://api.github.com"
+    DOCS:        "https://github.com/xaviershilosaputra/OpenAero",
+    API_PING:    "https://api.github.com",
   },
-
   THEME: {
     STORAGE_KEY: "openaero-theme",
-    MODES: ["dark", "light", "auto"]
+    MODES: ["dark", "light", "auto"],
   },
-
   COMMANDS: [
     "search", "help", "clear", "exit", "theme", "guide",
     "weather", "ls", "cd", "cat", "sudo", "uname", "neofetch",
-    "ping", "whoami", "history"
+    "ping", "whoami", "history",
   ],
-
-  AUTH: {
-    SUDO_PASSWORD: "admin123"
-  },
-
+  AUTH: { SUDO_PASSWORD: "admin123" },
   VFS: {
-    "README.md": "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/README.md",
-    "index.html": "https://github.com/xaviershilosaputra/OpenAero/blob/main/index.html",
-    "terminal.html": "https://github.com/xaviershilosaputra/OpenAero/blob/main/terminal.html",
-    "js": {
-      "script.js": "https://github.com/xaviershilosaputra/OpenAero/blob/main/js/script.js"
-    },
-    "css": {
-      "styles.css": "https://github.com/xaviershilosaputra/OpenAero/blob/main/css/styles.css"
-    },
-    "docs": {
-      "CONTRIBUTING.md": "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/docs/CONTRIBUTING.md"
-    }
-  }
+    "README.md":    "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/README.md",
+    "index.html":   "https://github.com/xaviershilosaputra/OpenAero/blob/main/index.html",
+    "terminal.html":"https://github.com/xaviershilosaputra/OpenAero/blob/main/terminal.html",
+    js:  { "script.js":  "https://github.com/xaviershilosaputra/OpenAero/blob/main/js/script.js",
+           "cache.js":   "https://github.com/xaviershilosaputra/OpenAero/blob/main/js/cache.js" },
+    css: { "styles.css": "https://github.com/xaviershilosaputra/OpenAero/blob/main/css/styles.css" },
+    docs:{ "CONTRIBUTING.md": "https://raw.githubusercontent.com/xaviershilosaputra/OpenAero/main/docs/CONTRIBUTING.md" },
+  },
 };
 
-let currentDir = CONFIG.VFS;
+let currentDir  = CONFIG.VFS;
 let currentPath = "~";
-let isSudo = false;
+let isSudo      = false;
 let isPasswordMode = false;
-
-function sanitize(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
 
 function getTheme() {
   try { return localStorage.getItem(CONFIG.THEME.STORAGE_KEY) || "auto"; } catch(_) { return "auto"; }
 }
-
-function updatePrompt() {
-  const user  = isSudo ? CONFIG.SYSTEM.ROOT_USER : CONFIG.SYSTEM.USER;
-  const host  = CONFIG.SYSTEM.HOST;
-  const sigil = isSudo ? '#' : '$';
-
-  document.getElementById("prompt").innerHTML =
-    `<span class="prompt-user"  style="color:var(--term-green)">${user}</span>` +
-    `<span class="prompt-sigil" style="color:var(--term-dim)">@</span>` +
-    `<span class="prompt-host"  style="color:var(--term-blue)">${host}</span>` +
-    `<span class="prompt-sigil" style="color:var(--term-dim)">:</span>` +
-    `<span class="prompt-path"  style="color:var(--term-purple)">${currentPath}</span>` +
-    `<span class="prompt-sigil" style="color:var(--term-dim)">${sigil}&nbsp;</span>`;
-}
-
-updatePrompt();
 
 function applyTheme(theme, persist = true) {
   let resolved = theme;
@@ -303,69 +233,25 @@ function initTheme() {
   try { stored = localStorage.getItem(CONFIG.THEME.STORAGE_KEY); } catch(_) {}
   applyTheme(stored || "auto", false);
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-    const current = getTheme();
-    if (!current || current === "auto") applyTheme("auto", false);
+    if (!getTheme() || getTheme() === "auto") applyTheme("auto", false);
   });
 }
 
+function updatePrompt() {
+  const user  = isSudo ? CONFIG.SYSTEM.ROOT_USER : CONFIG.SYSTEM.USER;
+  const sigil = isSudo ? "#" : "$";
+  document.getElementById("prompt").innerHTML =
+    `<span class="prompt-user"  style="color:var(--term-green)">${user}</span>` +
+    `<span class="prompt-sigil" style="color:var(--term-dim)">@</span>` +
+    `<span class="prompt-host"  style="color:var(--term-blue)">${CONFIG.SYSTEM.HOST}</span>` +
+    `<span class="prompt-sigil" style="color:var(--term-dim)">:</span>` +
+    `<span class="prompt-path"  style="color:var(--term-purple)">${currentPath}</span>` +
+    `<span class="prompt-sigil" style="color:var(--term-dim)">${sigil}&nbsp;</span>`;
+}
+updatePrompt();
+
 const term  = document.getElementById("terminal");
 const input = document.getElementById("cmd");
-
-let commandHistory = [];
-let historyIndex   = -1;
-
-const cursorEl = document.getElementById("cursor-blink");
-input.addEventListener("input", () => {
-  cursorEl.style.display = input.value.length ? "none" : "inline";
-});
-input.addEventListener("blur",  () => { cursorEl.style.display = "inline"; });
-input.addEventListener("focus", () => {
-  cursorEl.style.display = input.value.length ? "none" : "inline";
-});
-
-input.addEventListener("keydown", async e => {
-  if (e.key === "Enter") {
-    const cmd = input.value.trim();
-    
-    if (isPasswordMode) {
-      const enteredPass = input.value;
-      input.value = "";
-      input.type = "text";
-      isPasswordMode = false;
-      await handlePassword(enteredPass);
-      return;
-    }
-
-    if (cmd) {
-      commandHistory.unshift(cmd);
-      historyIndex = -1;
-      await handleCommand(cmd);
-    }
-    input.value = "";
-    cursorEl.style.display = "inline";
-  } else if (e.key === "ArrowUp") {
-    e.preventDefault();
-    if (historyIndex < commandHistory.length - 1) {
-      historyIndex++;
-      input.value = commandHistory[historyIndex];
-      cursorEl.style.display = "none";
-    }
-  } else if (e.key === "ArrowDown") {
-    e.preventDefault();
-    if (historyIndex > 0) {
-      historyIndex--;
-      input.value = commandHistory[historyIndex];
-      cursorEl.style.display = "none";
-    } else {
-      historyIndex = -1;
-      input.value = "";
-      cursorEl.style.display = "inline";
-    }
-  } else if (e.key === "Tab") {
-    e.preventDefault();
-    handleTabCompletion();
-  }
-});
 
 async function print(text = "", speed = 8) {
   const div = document.createElement("div");
@@ -376,25 +262,28 @@ async function print(text = "", speed = 8) {
   let currentSpan = document.createElement("span");
   div.appendChild(currentSpan);
 
-  for (const part of parts) {
-    if (part === "[[g]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-green)";  div.appendChild(currentSpan); continue; }
-    if (part === "[[b]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-blue)";   div.appendChild(currentSpan); continue; }
-    if (part === "[[p]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-purple)"; div.appendChild(currentSpan); continue; }
-    if (part === "[[c]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-cyan)";   div.appendChild(currentSpan); continue; }
-    if (part === "[[r]]") { currentSpan = document.createElement("span"); currentSpan.style.color = "var(--term-text)";   div.appendChild(currentSpan); continue; }
+  const colorMap = {
+    "[[g]]": "var(--term-green)",
+    "[[b]]": "var(--term-blue)",
+    "[[p]]": "var(--term-purple)",
+    "[[c]]": "var(--term-cyan)",
+    "[[r]]": "var(--term-text)",
+  };
 
+  for (const part of parts) {
+    if (colorMap[part]) {
+      currentSpan = document.createElement("span");
+      currentSpan.style.color = colorMap[part];
+      div.appendChild(currentSpan);
+      continue;
+    }
     const safePart = sanitize(part);
     let i = 0;
     while (i < safePart.length) {
-      if (safePart[i] === '&') {
-        const entityEnd = safePart.indexOf(';', i);
-        if (entityEnd !== -1) {
-          currentSpan.innerHTML += safePart.substring(i, entityEnd + 1);
-          i = entityEnd + 1;
-        } else {
-          currentSpan.innerHTML += safePart[i];
-          i++;
-        }
+      if (safePart[i] === "&") {
+        const end = safePart.indexOf(";", i);
+        if (end !== -1) { currentSpan.innerHTML += safePart.substring(i, end + 1); i = end + 1; }
+        else            { currentSpan.innerHTML += safePart[i]; i++; }
       } else {
         currentSpan.innerHTML += safePart[i];
         i++;
@@ -403,7 +292,59 @@ async function print(text = "", speed = 8) {
       if (speed > 0) await new Promise(r => setTimeout(r, speed));
     }
   }
-  return Promise.resolve();
+}
+
+let commandHistory = [];
+let historyIndex   = -1;
+
+const cursorEl = document.getElementById("cursor-blink");
+
+input.addEventListener("input",  () => { cursorEl.style.display = input.value.length ? "none" : "inline"; });
+input.addEventListener("blur",   () => { cursorEl.style.display = "inline"; });
+input.addEventListener("focus",  () => { cursorEl.style.display = input.value.length ? "none" : "inline"; });
+
+input.addEventListener("keydown", async e => {
+  if (e.key === "Enter") {
+    const cmd = input.value.trim();
+    if (isPasswordMode) {
+      const pass = input.value;
+      input.value = "";
+      input.type  = "text";
+      isPasswordMode = false;
+      await handlePassword(pass);
+      return;
+    }
+    if (cmd) { commandHistory.unshift(cmd); historyIndex = -1; await handleCommand(cmd); }
+    input.value = "";
+    cursorEl.style.display = "inline";
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (historyIndex < commandHistory.length - 1) { historyIndex++; input.value = commandHistory[historyIndex]; cursorEl.style.display = "none"; }
+  } else if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (historyIndex > 0) { historyIndex--; input.value = commandHistory[historyIndex]; cursorEl.style.display = "none"; }
+    else { historyIndex = -1; input.value = ""; cursorEl.style.display = "inline"; }
+  } else if (e.key === "Tab") {
+    e.preventDefault();
+    handleTabCompletion();
+  }
+});
+
+function handleTabCompletion() {
+  const parts    = input.value.split(" ");
+  const lastPart = parts[parts.length - 1].toLowerCase();
+  if (parts.length === 1) {
+    const match = CONFIG.COMMANDS.find(c => c.startsWith(lastPart));
+    if (match) input.value = match + " ";
+  } else if (["cd", "cat", "ls"].includes(parts[0].toLowerCase())) {
+    const entries = Object.keys(currentDir);
+    const match   = entries.find(e => e.toLowerCase().startsWith(lastPart));
+    if (match) {
+      parts[parts.length - 1] = match;
+      input.value = parts.join(" ") + (typeof currentDir[match] === "object" ? "/" : "");
+    }
+  }
+  cursorEl.style.display = input.value.length ? "none" : "inline";
 }
 
 async function banner() {
@@ -424,28 +365,28 @@ async function help() {
   await print("[[p]]--- OpenAero Help Menu ---[[r]]");
   await print("");
   await print("[[b]]Flight Tracking:[[r]]");
-  await print("  [[g]]search <ID>[[r]]  Track a specific flight (e.g., [[c]]search SQ322[[r]])");
-  await print("  [[g]]weather <ICAO>[[r]] Get airport weather (e.g., [[c]]weather WSSS[[r]])");
-  await print("  [[g]]guide <topic>[[r]] Learn about [[c]]metar, flight,[[r]] or [[c]]status[[r]] data");
+  await print("  [[g]]search <ID>[[r]]     Track a flight (e.g., [[c]]search SQ322[[r]])");
+  await print("  [[g]]weather <ICAO>[[r]]  Airport weather (e.g., [[c]]weather WSSS[[r]])");
+  await print("  [[g]]guide <topic>[[r]]   Learn about [[c]]metar, flight,[[r]] or [[c]]status[[r]] data");
   await print("");
-  await print("[[b]]File System (Browse Source Code):[[r]]");
-  await print("  [[g]]ls[[r]]             List files in the current folder");
-  await print("  [[g]]cd <folder>[[r]]    Move into a folder (e.g., [[c]]cd js[[r]])");
-  await print("  [[g]]cd ..[[r]]          Go back up one folder");
-  await print("  [[g]]cat <file>[[r]]     Open and read a file in a new tab");
+  await print("[[b]]File System:[[r]]");
+  await print("  [[g]]ls[[r]]              List files in current folder");
+  await print("  [[g]]cd <folder>[[r]]     Move into a folder");
+  await print("  [[g]]cd ..[[r]]           Go back up one folder");
+  await print("  [[g]]cat <file>[[r]]      Open a file in a new tab");
   await print("");
   await print("[[b]]System & Security:[[r]]");
-  await print("  [[g]]sudo[[r]]           Log in as [[p]]root[[r]] to access the GitHub repo");
-  await print("  [[g]]whoami[[r]]         Check if you are a standard user or root");
-  await print("  [[g]]history[[r]]        See a list of your recently used commands");
-  await print("  [[g]]neofetch[[r]]       Display system status and aircraft info");
-  await print("  [[g]]ping <host>[[r]]    Test your real-time connection to the web");
-  await print("  [[g]]uname[[r]]          Show the current OS kernel version");
+  await print("  [[g]]sudo[[r]]            Log in as [[p]]root[[r]]");
+  await print("  [[g]]whoami[[r]]          Check current user");
+  await print("  [[g]]history[[r]]         Recent commands");
+  await print("  [[g]]neofetch[[r]]        System status");
+  await print("  [[g]]ping <host>[[r]]     Test connection");
+  await print("  [[g]]uname[[r]]           OS kernel version");
   await print("");
-  await print("[[b]]General & UI Control:[[r]]");
-  await print("  [[g]]theme <mode>[[r]]   Set [[c]]dark, light,[[r]] or [[c]]auto[[r]]");
-  await print("  [[g]]clear[[r]]           Empty the terminal screen");
-  await print("  [[g]]exit[[r]]            Close the terminal and return home");
+  await print("[[b]]UI Control:[[r]]");
+  await print("  [[g]]theme <mode>[[r]]    Set [[c]]dark, light,[[r]] or [[c]]auto[[r]]");
+  await print("  [[g]]clear[[r]]           Clear screen");
+  await print("  [[g]]exit[[r]]            Return to main dashboard");
   await print("");
 }
 
@@ -455,19 +396,23 @@ function validateFlight(f) {
 
 async function searchFlight(flight) {
   await print("Connecting to aviationstack API...");
-  await print("Fetching flight telemetry...");
+
+  const cacheKey = `flight:${flight}`;
+  const isCached = window.OpenAeroCache.get(cacheKey) !== undefined;
+  if (isCached) {
+    await print("[[g]]Cache hit:[[r]] serving from session cache (no API call).");
+  } else {
+    await print("Fetching flight telemetry...");
+  }
+
   try {
-    const url = `${CONFIG.API.BASE_URL}?access_key=${CONFIG.API.KEY}&flight_iata=${encodeURIComponent(flight)}`;
-    const res  = await fetch(url);
-    const data = await res.json();
-    if (!data.data || !data.data.length) {
-      await print("[[p]]No results found for IDENT: [[r]]" + flight);
-      return;
-    }
-    const f = data.data[0];
+    const results = await fetchFlights(flight, CONFIG.API.KEY, CONFIG.API.BASE_URL);
+    if (!results.length) { await print("[[p]]No results found for IDENT: [[r]]" + flight); return; }
+
+    const f = results[0];
     await print("[[c]]--- TELEMETRY DATA RECOVERY ---[[r]]");
-    await print(`[[p]]IDENT:[[r]]      ${f.flight?.iata || "N/A"}`);
-    await print(`[[p]]CARRIER:[[r]]    ${f.airline?.name || "Unknown"}`);
+    await print(`[[p]]IDENT:[[r]]      ${f.flight?.iata    || "N/A"}`);
+    await print(`[[p]]CARRIER:[[r]]    ${f.airline?.name   || "Unknown"}`);
     await print(`[[p]]STATUS:[[r]]     [[g]]${(f.flight_status || "unknown").toUpperCase()}[[r]]`);
     await print("");
     await print(`[[b]]VECTOR:[[r]]     [[c]]${f.departure?.iata}[[r]] -> [[c]]${f.arrival?.iata}[[r]]`);
@@ -483,68 +428,31 @@ async function searchFlight(flight) {
   }
 }
 
-const AIRPORT_DB = {
-  "WSSS": { lat: 1.3502, lon: 103.9945, name: "Singapore Changi" },
-  "KJFK": { lat: 40.6413, lon: -73.7781, name: "New York JFK" },
-  "EGLL": { lat: 51.4700, lon: -0.4543, name: "London Heathrow" },
-  "WMKK": { lat: 2.7456, lon: 101.7072, name: "Kuala Lumpur Intl" },
-  "VHHH": { lat: 22.3080, lon: 113.9185, name: "Hong Kong Intl" }
-};
+async function fetchWeatherTerminal(icao) {
+  const cacheKey = `meteo:${icao}`;
+  const isCached = window.OpenAeroCache.get(cacheKey) !== undefined;
 
-async function getCoords(icao) {
-  if (AIRPORT_DB[icao]) return AIRPORT_DB[icao];
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${icao}+airport`);
-    const data = await res.json();
-    if (data && data.length > 0) return { lat: data[0].lat, lon: data[0].lon, name: data[0].display_name.split(',')[0] };
-  } catch (e) { return null; }
-  return null;
-}
-
-async function fetchWeather(icao) {
   await print(`Resolving coordinates for [[c]]${icao}[[r]]...`);
-  const loc = await getCoords(icao);
-  if (!loc) { await print("[[p]]Error:[[r]] Could not locate airport."); return; }
-  
-  await print(`Fetching Open-Meteo data for ${loc.name}...`);
-  try {
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,visibility`);
-    const data = await res.json();
-    const cur = data.current;
-
-    await print(`[[c]]--- WEATHER REPORT: ${icao} ---[[r]]`);
-    await print(`[[p]]LOCATION:[[r]]   ${loc.name}`);
-    await print(`[[p]]TEMP:[[r]]       ${cur.temperature_2m}°C`);
-    await print(`[[p]]WIND:[[r]]       ${cur.wind_speed_10m} km/h @ ${cur.wind_direction_10m}°`);
-    await print(`[[p]]HUMIDITY:[[r]]   ${cur.relative_humidity_2m}%`);
-    await print(`[[p]]VISIBILITY:[[r]] ${(cur.visibility / 1000).toFixed(1)} km`);
-    await print(`[[p]]PRESSURE:[[r]]   ${cur.surface_pressure} hPa`);
-    await print("");
-    await print(`[[b]]METAR (Synth):[[r]] ${icao} 000000Z ${cur.wind_direction_10m}${cur.wind_speed_10m}KT 9999 CLR ${cur.temperature_2m}/XX Q${Math.round(cur.surface_pressure)}`);
-    await print("[[c]]--------------------------------[[r]]");
-  } catch (e) { await print("[[p]]Error:[[r]] Failed to retrieve weather data."); }
-}
-
-function handleTabCompletion() {
-  const rawValue = input.value;
-  const parts = rawValue.split(" ");
-  const lastPart = parts[parts.length - 1].toLowerCase();
-
-  if (parts.length === 1) {
-    // Complete Commands
-    const match = CONFIG.COMMANDS.find(c => c.startsWith(lastPart));
-    if (match) input.value = match + " ";
-  } else if (["cd", "cat", "ls"].includes(parts[0].toLowerCase())) {
-    // Complete Files/Folders
-    const entries = Object.keys(currentDir);
-    const match = entries.find(e => e.toLowerCase().startsWith(lastPart));
-    if (match) {
-      parts[parts.length - 1] = match;
-      const suffix = typeof currentDir[match] === "object" ? "/" : "";
-      input.value = parts.join(" ") + suffix;
-    }
+  if (isCached) {
+    await print("[[g]]Cache hit:[[r]] weather data from session cache.");
   }
-  cursorEl.style.display = input.value.length ? "none" : "inline";
+
+  const meteo = await fetchOpenMeteo(icao);
+  if (!meteo) { await print("[[p]]Error:[[r]] Could not retrieve weather data."); return; }
+
+  const cur = meteo.current;
+  await print(`[[c]]--- WEATHER REPORT: ${icao} ---[[r]]`);
+  await print(`[[p]]LOCATION:[[r]]   ${meteo.airportName || icao}`);
+  await print(`[[p]]TEMP:[[r]]       ${cur.temperature_2m}°C`);
+  await print(`[[p]]WIND:[[r]]       ${cur.wind_speed_10m} kt @ ${cur.wind_direction_10m}°`);
+  await print(`[[p]]HUMIDITY:[[r]]   ${cur.relative_humidity_2m}%`);
+  await print(`[[p]]VISIBILITY:[[r]] ${(cur.visibility / 1000).toFixed(1)} km`);
+  if (cur.surface_pressure != null) {
+    await print(`[[p]]PRESSURE:[[r]]   ${cur.surface_pressure} hPa`);
+  }
+  await print("");
+  await print(`[[b]]METAR (Synth):[[r]] ${icao} ${cur.wind_direction_10m}${cur.wind_speed_10m}KT 9999 CLR ${cur.temperature_2m}/XX Q${Math.round(cur.surface_pressure ?? 1013)}`);
+  await print("[[c]]--------------------------------[[r]]");
 }
 
 async function handlePassword(enteredPass) {
@@ -559,15 +467,49 @@ async function handlePassword(enteredPass) {
   }
 }
 
+async function guide(topic) {
+  if (!topic) { await print("Usage: guide <topic>"); await print("Topics: metar, flight, status"); return; }
+  if (topic === "metar") {
+    await print("METAR Guide:");
+    await print("  Example: METAR WSSS 121200Z 18010KT 9999 FEW020 30/24 Q1012");
+    await print("  WSSS    → Airport ICAO code");
+    await print("  121200Z → Date/time (12th day, 12:00 UTC)");
+    await print("  18010KT → Wind (180° at 10 knots)");
+    await print("  9999    → Visibility (10km+)");
+    await print("  FEW020  → Few clouds at 2000 ft");
+    await print("  30/24   → Temp/Dew point (°C)");
+    await print("  Q1012   → Pressure (hPa)");
+    return;
+  }
+  if (topic === "flight") {
+    await print("Flight Data Guide:");
+    await print("  Status: scheduled | active | landed | cancelled");
+    await print("  Delay: minutes behind schedule");
+    await print("  Gate/Terminal: boarding info");
+    await print("  Aircraft: plane type (e.g. B77W)");
+    return;
+  }
+  if (topic === "status") {
+    await print("Status Guide:");
+    await print("  scheduled → not departed yet");
+    await print("  active    → currently flying");
+    await print("  landed    → arrived");
+    await print("  cancelled → flight cancelled");
+    return;
+  }
+  await print("Unknown guide topic. Try: metar, flight, status");
+}
+
+/* ── Main command dispatcher ── */
 async function handleCommand(cmd) {
-  const user = isSudo ? CONFIG.SYSTEM.ROOT_USER : CONFIG.SYSTEM.USER;
-  const sigil = isSudo ? '#' : '$';
+  const user  = isSudo ? CONFIG.SYSTEM.ROOT_USER : CONFIG.SYSTEM.USER;
+  const sigil = isSudo ? "#" : "$";
   await print(`[[g]]${user}[[r]]@[[b]]tracker[[r]]:[[p]]${currentPath}[[r]]${sigil} ` + cmd, 0);
-  
+
   const parts = cmd.trim().split(" ");
   const base  = parts[0].toLowerCase();
 
-  if (base === "help")  return await help();
+  if (base === "help")  { await help(); return; }
   if (base === "clear") { term.innerHTML = ""; return; }
 
   if (base === "search") {
@@ -580,7 +522,7 @@ async function handleCommand(cmd) {
   if (base === "weather") {
     const icao = parts[1];
     if (!icao || icao.length < 3) { await print("Usage: weather <ICAO> (e.g., weather WSSS)"); return; }
-    await fetchWeather(icao.toUpperCase());
+    await fetchWeatherTerminal(icao.toUpperCase());
     return;
   }
 
@@ -593,49 +535,15 @@ async function handleCommand(cmd) {
     return;
   }
 
-  if (base === "guide") {
-    const topic = parts[1];
-    if (!topic) { await print("Usage: guide <topic>"); await print("Topics: metar, flight, status"); return; }
-    if (topic === "metar") {
-      await print("METAR Guide:");
-      await print("  Example: METAR WSSS 121200Z 18010KT 9999 FEW020 30/24 Q1012");
-      await print("  WSSS    → Airport ICAO code");
-      await print("  121200Z → Date/time (12th day, 12:00 UTC)");
-      await print("  18010KT → Wind (180° at 10 knots)");
-      await print("  9999    → Visibility (10km+)");
-      await print("  FEW020  → Few clouds at 2000 ft");
-      await print("  30/24   → Temp/Dew point (°C)");
-      await print("  Q1012   → Pressure (hPa)");
-      return;
-    }
-    if (topic === "flight") {
-      await print("Flight Data Guide:");
-      await print("  Status: scheduled | active | landed | cancelled");
-      await print("  Delay: minutes behind schedule");
-      await print("  Gate/Terminal: boarding info");
-      await print("  Aircraft: plane type (e.g. B77W)");
-      return;
-    }
-    if (topic === "status") {
-      await print("Status Guide:");
-      await print("  scheduled → not departed yet");
-      await print("  active    → currently flying");
-      await print("  landed    → arrived");
-      await print("  cancelled → flight cancelled");
-      return;
-    }
-    await print("Unknown guide topic.");
-    return;
-  }
+  if (base === "guide") { await guide(parts[1]); return; }
 
   if (base === "ls") {
     const entries = Object.keys(currentDir);
-    let output = "";
+    let out = "";
     entries.forEach(entry => {
-      const isDir = typeof currentDir[entry] === "object";
-      output += isDir ? `[[b]]${entry}/[[r]]  ` : `[[g]]${entry}[[r]]  `;
+      out += typeof currentDir[entry] === "object" ? `[[b]]${entry}/[[r]]  ` : `[[g]]${entry}[[r]]  `;
     });
-    await print(output);
+    await print(out);
     return;
   }
 
@@ -656,14 +564,11 @@ async function handleCommand(cmd) {
 
   if (base === "cat") {
     const file = parts[1];
-    if (!file) {
-      await print("usage: cat <file>");
-    } else if (currentDir[file] && typeof currentDir[file] === "string") {
+    if (!file) { await print("usage: cat <file>"); }
+    else if (currentDir[file] && typeof currentDir[file] === "string") {
       await print(`[[c]]Reading remote source: ${file}...[[r]]`);
       window.open(currentDir[file], "_blank");
-    } else {
-      await print(`cat: ${file}: No such file or directory`);
-    }
+    } else { await print(`cat: ${file}: No such file or directory`); }
     return;
   }
 
@@ -680,17 +585,24 @@ async function handleCommand(cmd) {
   if (base === "uname") { await print("OpenAero-OS 5.15.0-generic x86_64 GNU/Linux"); return; }
 
   if (base === "neofetch") {
-    const theme   = getTheme();
-    const user    = isSudo ? "root" : "openaero";
+    const theme      = getTheme();
+    const user       = isSudo ? "root" : "openaero";
     const uptimeMins = Math.floor(performance.now() / 60000);
     const uptimeStr  = uptimeMins > 0 ? `${uptimeMins}m` : "initial boot";
-    await print("[[c]]     ______          [[r]] [[c]]" + user + "[[r]]@[[b]]openaero[[r]]");
+    let cacheEntries = 0;
+    try {
+      for (let i = 0; i < sessionStorage.length; i++) {
+        if (sessionStorage.key(i).startsWith("oac:")) cacheEntries++;
+      }
+    } catch(_) {}
+    await print(`[[c]]     ______          [[r]] [[c]]${user}[[r]]@[[b]]openaero[[r]]`);
     await print("[[c]]  -- \\____/\\         [[r]] ----------------");
     await print("[[c]]  --- \\____\\\\        [[r]] [[p]]OS:[[r]] OpenAero Linux v1.1");
     await print("[[c]]  --- /     \\\\       [[r]] [[p]]Kernel:[[r]] 5.15.0-vfs");
-    await print("[[c]]  --- /______//       [[r]] [[p]]Uptime:[[r]] " + uptimeStr);
-    await print("[[c]]    \\______/         [[r]] [[p]]Theme:[[r]] " + theme.toUpperCase());
+    await print(`[[c]]  --- /______//       [[r]] [[p]]Uptime:[[r]] ${uptimeStr}`);
+    await print(`[[c]]    \\______/         [[r]] [[p]]Theme:[[r]] ${theme.toUpperCase()}`);
     await print("[[c]]                     [[r]] [[p]]Uplink:[[r]] Active (AviationStack)");
+    await print(`[[c]]                     [[r]] [[p]]Cache:[[r]] ${cacheEntries} entry${cacheEntries !== 1 ? "s" : ""} in session`);
     return;
   }
 
@@ -698,14 +610,11 @@ async function handleCommand(cmd) {
     const host = CONFIG.URLS.API_PING;
     await print(`PING ${host} via HTTPS/GET...`);
     for (let i = 0; i < 3; i++) {
-      const start = performance.now();
+      const t0 = performance.now();
       try {
-        await fetch(host, { mode: 'no-cors' });
-        const duration = (performance.now() - start).toFixed(2);
-        await print(`Reply from ${host}: time=${duration}ms status=OK`);
-      } catch (e) {
-        await print(`Request timeout for ${host}`);
-      }
+        await fetch(host, { mode: "no-cors" });
+        await print(`Reply from ${host}: time=${( performance.now() - t0).toFixed(2)}ms status=OK`);
+      } catch (_) { await print(`Request timeout for ${host}`); }
       await new Promise(r => setTimeout(r, 500));
     }
     return;
@@ -713,8 +622,8 @@ async function handleCommand(cmd) {
 
   if (base === "history") {
     if (!commandHistory.length) { await print("No history found."); return; }
-    const historyCopy = [...commandHistory].reverse();
-    for (let i = 0; i < historyCopy.length; i++) await print(`  ${i + 1}  ${historyCopy[i]}`);
+    const copy = [...commandHistory].reverse();
+    for (let i = 0; i < copy.length; i++) await print(`  ${i + 1}  ${copy[i]}`);
     return;
   }
 
@@ -724,10 +633,10 @@ async function handleCommand(cmd) {
     return;
   }
 
-  await print("Command not found. Type 'help'.");
+  await print("Command not found. Type [[g]]help[[r]].");
 }
 
-window.addEventListener("storage", (e) => {
+window.addEventListener("storage", e => {
   if (e.key === CONFIG.THEME.STORAGE_KEY) {
     applyTheme(e.newValue || "dark");
     print(`[system] Theme synced: ${e.newValue}`);
@@ -737,6 +646,5 @@ window.addEventListener("storage", (e) => {
 initTheme();
 banner();
 </script>
-
 </body>
 </html>
