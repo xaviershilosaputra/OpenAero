@@ -21,15 +21,29 @@ This guide explains how to contribute safely without breaking the core tracker f
 
 ## Repository Structure
 
-/
-├─ index.html          # Main dashboard semantic markup
-├─ terminal.html       # CLI terminal interface
-├─ js/
-│  └─ script.js        # Core logic and API integration
-├─ css/
-│  └─ styles.css       # Global styles and glassmorphism UI
-├─ CONTRIBUTING.md     # Contribution guidelines
-└─ README.md           # Project overview and setup
+OpenAero/
+├── index.html
+├── terminal.html
+├── css/
+│   └── styles.css
+├── js/
+│   └── script.js
+├── cli/
+│   ├── src/
+│   │   └── main.cpp
+│   ├── include/
+│   │   ├── Flight.h
+│   │   ├── NetworkManager.h
+│   │   ├── SystemUtils.h
+│   │   ├── Weather.h
+│   │   └── nlohmann/
+│   │       └── json.hpp
+│   ├── lib/
+│   └── build/
+│       └── openaero.exe
+├── docs/
+│   └── CONTRIBUTING.md
+└── README.md
 
 ## Project Attribution and Forking
 
