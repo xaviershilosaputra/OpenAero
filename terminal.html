@@ -258,6 +258,7 @@ const CONFIG = {
 let currentDir = CONFIG.VFS;
 let currentPath = "~";
 let isSudo = false;
+let isPasswordMode = false;
 
 function sanitize(str) {
   const div = document.createElement('div');
@@ -325,10 +326,19 @@ input.addEventListener("focus", () => {
 input.addEventListener("keydown", async e => {
   if (e.key === "Enter") {
     const cmd = input.value.trim();
+    
+    if (isPasswordMode) {
+      const enteredPass = input.value;
+      input.value = "";
+      input.type = "text";
+      isPasswordMode = false;
+      await handlePassword(enteredPass);
+      return;
+    }
+
     if (cmd) {
       commandHistory.unshift(cmd);
       historyIndex = -1;
-      cursorEl.style.display = "inline";
       await handleCommand(cmd);
     }
     input.value = "";
@@ -347,15 +357,13 @@ input.addEventListener("keydown", async e => {
       input.value = commandHistory[historyIndex];
       cursorEl.style.display = "none";
     } else {
-      historyIndex  = -1;
-      input.value   = "";
+      historyIndex = -1;
+      input.value = "";
       cursorEl.style.display = "inline";
     }
   } else if (e.key === "Tab") {
     e.preventDefault();
-    const current = input.value.toLowerCase();
-    const match   = CONFIG.COMMANDS.find(c => c.startsWith(current));
-    if (match) { input.value = match + " "; cursorEl.style.display = "none"; }
+    handleTabCompletion();
   }
 });
 
@@ -517,8 +525,45 @@ async function fetchWeather(icao) {
   } catch (e) { await print("[[p]]Error:[[r]] Failed to retrieve weather data."); }
 }
 
+function handleTabCompletion() {
+  const rawValue = input.value;
+  const parts = rawValue.split(" ");
+  const lastPart = parts[parts.length - 1].toLowerCase();
+
+  if (parts.length === 1) {
+    // Complete Commands
+    const match = CONFIG.COMMANDS.find(c => c.startsWith(lastPart));
+    if (match) input.value = match + " ";
+  } else if (["cd", "cat", "ls"].includes(parts[0].toLowerCase())) {
+    // Complete Files/Folders
+    const entries = Object.keys(currentDir);
+    const match = entries.find(e => e.toLowerCase().startsWith(lastPart));
+    if (match) {
+      parts[parts.length - 1] = match;
+      const suffix = typeof currentDir[match] === "object" ? "/" : "";
+      input.value = parts.join(" ") + suffix;
+    }
+  }
+  cursorEl.style.display = input.value.length ? "none" : "inline";
+}
+
+async function handlePassword(enteredPass) {
+  if (enteredPass === CONFIG.AUTH.SUDO_PASSWORD) {
+    await print("[[p]]ALRT:[[r]] Elevated privileges requested.");
+    isSudo = true;
+    updatePrompt();
+    await print("[[g]]Session promoted to ROOT.[[r]] Opening Repository...");
+    setTimeout(() => window.open(CONFIG.URLS.GITHUB_REPO, "_blank"), 1000);
+  } else {
+    await print("sudo: 1 incorrect password attempt");
+  }
+}
+
 async function handleCommand(cmd) {
-  await print("[[g]]openaero[[r]]@[[b]]tracker[[r]]:[[p]]~[[r]]$ " + cmd, 0);
+  const user = isSudo ? CONFIG.SYSTEM.ROOT_USER : CONFIG.SYSTEM.USER;
+  const sigil = isSudo ? '#' : '$';
+  await print(`[[g]]${user}[[r]]@[[b]]tracker[[r]]:[[p]]${currentPath}[[r]]${sigil} ` + cmd, 0);
+  
   const parts = cmd.trim().split(" ");
   const base  = parts[0].toLowerCase();
 
@@ -601,7 +646,7 @@ async function handleCommand(cmd) {
       currentPath = "~";
     } else if (currentDir[target] && typeof currentDir[target] === "object") {
       currentDir  = currentDir[target];
-      currentPath = `~/${target}`;
+      currentPath = currentPath === "~" ? `~/${target}` : `${currentPath}/${target}`;
     } else {
       await print(`cd: folder not found: ${target}`);
     }
@@ -624,14 +669,9 @@ async function handleCommand(cmd) {
 
   if (base === "sudo") {
     if (isSudo) { await print("Already running as root."); return; }
-    const pass = prompt("[sudo] password for openaero:");
-    if (pass !== CONFIG.AUTH.SUDO_PASSWORD) { await print("sudo: 1 incorrect password attempt"); return; }
-    await print("[[p]]ALRT:[[r]] Elevated privileges requested.");
-    await print("Logging into GitHub OpenAero Kernel...");
-    isSudo = true;
-    updatePrompt();
-    await print("[[g]]Session promoted to ROOT.[[r]] Opening Repository...");
-    setTimeout(() => window.open(CONFIG.URLS.GITHUB_REPO, "_blank"), 1000);
+    await print("[sudo] password for openaero: ");
+    isPasswordMode = true;
+    input.type = "password";
     return;
   }
 
