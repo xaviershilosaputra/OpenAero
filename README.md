@@ -35,7 +35,7 @@ I used cross-page persistence layer using sessionStorage to bridge the GUI (main
 I refactored the code and removed over 200 lines of duplicate logic or data structures and combined it in the cache.js. Before the update, the AIRPORT_DB and other functions were copied across different files with inconsistent data (messy duplicates).
 
 * **Implementation:** I merged IATA and ICAO databases into one shared object and moved core utilities like sanitize, memoize, and fetchMetar into the global cache module.
-* **Results:** Bundle size is now much smaller. Additionally, API and memory usage is now significantly reduced. This modular "one source of truth" approach means any update to the database or logic now applies across the whole system instantly (better maintainability).
+* **Results:** The bundle size is now much smaller. Moreover, API and memory usage are now significantly reduced. This modular "one source of truth" approach means any update to the database or logic now applies across the whole system instantly (better maintainability).
 
 ## Technical Stack
 
