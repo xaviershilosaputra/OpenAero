@@ -9,7 +9,7 @@ OpenAero is designed to be the ultimate companion for planespotters, flight simm
 * **Real Time Tracking:** Search any IATA flight number to get live status, departure/arrival times, and terminal/gate info.
 * **Interactive Route Maps:** Visualizes the flight path using Leaflet.js with custom markers for origin and destination.
 * **Airport Weather (METAR):** Fetches and decodes live aviation weather reports. Includes a one click copy feature for pasting METAR strings into flight sims or dispatch tools.
-* **Avgeek Toolbelt:** A curated 3x2 dashboard linking directly to:
+* **Avgeek Toolbelt:** A curated toolkit that links directly to:
     * **FlightRadar24 and FlightAware** for deep radar data.
     * **Planespotters.net** for aircraft photos and history.
     * **LiveATC** for real time radio feeds.
@@ -26,16 +26,16 @@ OpenAero is designed to be the ultimate companion for planespotters, flight simm
 ## Optimization
 
 ### Shared Application Level Caching
-I used cross-page persistence layer using sessionStorage to bridge the GUI (main site) and the Terminal. This means both pages share a single source of truth for API data. By wrapping the AviationStack and Open-Meteo logic in a TTL governed system, the app achieves a 100 percent reduction in redundant API calls when you switch between views. If you look up a flight in the GUI, the data is already warm and ready when you open the Terminal.
+I used a cross-page persistence layer using sessionStorage to bridge the GUI (main site) and the Terminal. This means both pages share a single source of truth for API data. I wrapped the AviationStack and Open-Meteo logic in a TTL governed system and successfully achieves a 100 percent reduction in redundant API calls when users switch between views. When people look up a flight in the GUI, the data is already warm and ready when they run the same command in the Terminal.
 
 * **Implementation:** Created js/cache.js to manage a shared pool with specific expiration timers: 5 minutes for flights, 10 minutes for weather, and 60 minutes for airport coordinates.
-* **Results:** Eliminated unnecessary network latency for repeated searches and conserve API credits by serving cached data from the current session.
+* **Results:** Eliminated unnecessary network latency for repeated searches and conserved API credits by serving cached data from the current session.
 
-### Resource and Logic Deduplication
-I refactored the code and removed over 200 lines of duplicate logic or data structures and combined it in the cache.js. Before the update, the AIRPORT_DB and other functions were copied across different files with inconsistent data (messy duplicates).
+### Modular Architecture and Logic Deduplication
+I refactored the project to move all heavy lifting into a centralized `cache.js` module. Before, the `AIRPORT_DB` and core functions were duplicated across multiple files with inconsistent data (messy duplicates). I fixed the problem by decoupling the UI from the data-fetching layer (the Terminal and GUI now act as "clients" that pull only what they need from the shared backbone).
 
-* **Implementation:** I merged IATA and ICAO databases into one shared object and moved core utilities like sanitize, memoize, and fetchMetar into the global cache module.
-* **Results:** The bundle size is now much smaller. Moreover, API and memory usage are now significantly reduced. This modular "one source of truth" approach means any update to the database or logic now applies across the whole system instantly (better maintainability).
+* **Implementation:** I combined the IATA/ICAO databases into one object and removed over 200 lines of duplicate code. I also moved all core utilities like `sanitize()`, `memoize()`, and `fetchMetar()` to the global cache module.
+* **Results:** The bundle size and memory overhead is significantly reduced. My new "one source of truth" system also makes the system easier to maintain and update in the future.
 
 ## Technical Stack
 
