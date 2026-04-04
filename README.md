@@ -32,6 +32,14 @@ OpenAero is designed to be the ultimate companion for planespotters, flight simm
     * Aviation Weather Center (METAR Data)
     * Open-Meteo (Local Airport Weather)
 
+## OpenAero CLI
+Prefer to use a proper terminal? OpenAero now features a native Windows CLI tool built in C++.
+* **Fast & Lightweight:** No browser required.
+* **Flight Search:** Instant telemetry via `openaero search <flight_id>`.
+* **Weather:** Real-time METARs via `openaero weather <ICAO>`.
+
+[Download the latest CLI release here](https://github.com/xaviershilosaputra/OpenAero/releases)
+
 ## Getting Started
 
 OpenAero is a client side application. No database or backend server is required.
