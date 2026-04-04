@@ -28,8 +28,8 @@ OpenAero is designed to be the ultimate companion for planespotters, flight simm
 ### Shared Application Level Caching
 I used a cross-page persistence layer using sessionStorage to bridge the GUI (main site) and the Terminal. This means both pages share a single source of truth for API data. I wrapped the AviationStack and Open-Meteo logic in a TTL governed system and successfully achieves a 100 percent reduction in redundant API calls when users switch between views. When people look up a flight in the GUI, the data is already warm and ready when they run the same command in the Terminal.
 
-* **Implementation:** Created js/cache.js to manage a shared pool with specific expiration timers: 5 minutes for flights, 10 minutes for weather, and 60 minutes for airport coordinates.
-* **Results:** Eliminated unnecessary network latency for repeated searches and conserved API credits by serving cached data from the current session.
+* **Implementation:** I created cache.js to manage a shared pool with specific expiration timers: 5 minutes for flights, 10 minutes for weather, and 60 minutes for airport coordinates.
+* **Results:** This update eliminated unnecessary network latency for repeated searches and conserved API credits by serving cached data from the current session.
 
 ### Modular Architecture and Logic Deduplication
 I refactored the project to move all heavy lifting into a centralized `cache.js` module. Before, the `AIRPORT_DB` and core functions were duplicated across multiple files with inconsistent data (messy duplicates). I fixed the problem by decoupling the UI from the data-fetching layer (the Terminal and GUI now act as "clients" that pull only what they need from the shared backbone).
@@ -52,7 +52,7 @@ Prefer to use a proper terminal? OpenAero now features a native Windows CLI tool
 * **Flight Search:** Instant telemetry via `openaero search <flight_id>`.
 * **Weather:** Real-time METARs via `openaero weather <ICAO>`.
 
-[Download the latest CLI release here](https://github.com/xaviershilosaputra/OpenAero/releases)
+[Download the latest CLI release here](https://github.com/xaviershilosaputra/OpenAero/releases/latest)
 
 ## Getting Started
 
