@@ -12,9 +12,32 @@
 #include "../include/SystemUtils.h"
 #include "../include/NetworkManager.h"
 
+std::string getPasswordInput() {
+    std::string password = "";
+    while (true) {
+        int ch = _getch();
+        if (ch == 13) {
+            std::cout << std::endl;
+            return password;
+        } else if (ch == 8) {
+            if (!password.empty()) {
+                password.pop_back();
+                std::cout << "\b \b";
+            }
+        } else if (ch >= 32 && ch <= 126) {
+            password += (char)ch;
+        }
+    }
+}
+
 std::string getTerminalInput(std::vector<std::string>& history) {
     std::string currentInput = "";
     int historyPos = history.size();
+    
+    std::vector<std::string> commands = {
+        "search", "weather", "ls", "cat", "sudo", "whoami", 
+        "neofetch", "clear", "exit", "history", "ping", "help", "download"
+    };
 
     while (true) {
         int ch = _getch();
@@ -29,23 +52,45 @@ std::string getTerminalInput(std::vector<std::string>& history) {
                 std::cout << "\b \b";
             }
         } 
+        else if (ch == 9) {
+            size_t spacePos = currentInput.find_last_of(' ');
+            if (spacePos == std::string::npos) {
+                for (const auto& cmd : commands) {
+                    if (!currentInput.empty() && cmd.substr(0, currentInput.length()) == currentInput) {
+                        while(!currentInput.empty()) { std::cout << "\b \b"; currentInput.pop_back(); }
+                        currentInput = cmd;
+                        std::cout << currentInput;
+                        break;
+                    }
+                }
+            } else {
+                std::string partial = currentInput.substr(spacePos + 1);
+                namespace fs = std::filesystem;
+                try {
+                    for (const auto& entry : fs::directory_iterator(".")) {
+                        std::string fName = entry.path().filename().string();
+                        if (!partial.empty() && fName.find(partial) == 0) {
+                            while(currentInput.length() > spacePos + 1) { std::cout << "\b \b"; currentInput.pop_back(); }
+                            currentInput += fName;
+                            std::cout << fName;
+                            break;
+                        }
+                    }
+                } catch (...) {}
+            }
+        }
         else if (ch == 224) {
             ch = _getch();
             if (ch == 72 && historyPos > 0) {
                 historyPos--;
-                for(int i=0; i < currentInput.length(); ++i) std::cout << "\b \b";
+                while(!currentInput.empty()) { std::cout << "\b \b"; currentInput.pop_back(); }
                 currentInput = history[historyPos];
                 std::cout << currentInput;
             } 
-            else if (ch == 80 && historyPos < (int)history.size()) {
+            else if (ch == 80 && historyPos < (int)history.size()) { // DOWN
                 historyPos++;
-                for(int i=0; i < currentInput.length(); ++i) std::cout << "\b \b";
-                
-                if (historyPos == (int)history.size()) {
-                    currentInput = "";
-                } else {
-                    currentInput = history[historyPos];
-                }
+                while(!currentInput.empty()) { std::cout << "\b \b"; currentInput.pop_back(); }
+                currentInput = (historyPos == (int)history.size()) ? "" : history[historyPos];
                 std::cout << currentInput;
             }
         } 
@@ -102,7 +147,7 @@ int main() {
         else if (command == "search") {
             if (!argument.empty()) {
                 std::transform(argument.begin(), argument.end(), argument.begin(), ::toupper);
-                
+                                
                 std::cout << "\033[90mConnecting to Aviationstack...\033[0m" << std::endl;
                 
                 std::string apiKey = "2582c5cc9b95a3ce51c21525ff6a4063";
@@ -111,9 +156,6 @@ int main() {
 
                 std::string response = NetworkManager::fetch(url);
                 
-                // --- DEBUG LINE: This shows you exactly what the API says ---
-                // std::cout << "\n[DEBUG RAW]: " << response << "\n" << std::endl;
-
                 Flight liveFlight = Flight::fromJson(response);
                 liveFlight.printTelemetry();
             } else {
@@ -134,9 +176,10 @@ int main() {
             std::cout << "\033[1;36m    ______           \033[0m \033[1;37mopenaero\033[0m@\033[1;34mtracker\033[0m" << std::endl;
             std::cout << "\033[1;36m  -- \\____/\\         \033[0m ----------------" << std::endl;
             std::cout << "\033[1;36m  --- \\____\\\\        \033[0m \033[1;35mOS:\033[0m OpenAero Native v1.2" << std::endl;
-            std::cout << "\033[1;36m  --- /    \\\\        \033[0m \033[1;35mKernel:\033[0m Windows MSVC/GCC" << std::endl;
+            std::cout << "\033[1;36m  --- /     \\\\       \033[0m \033[1;35mKernel:\033[0m Windows MSVC/GCC" << std::endl;
             std::cout << "\033[1;36m  --- /______//      \033[0m \033[1;35mUplink:\033[0m Active (WinInet)" << std::endl;
             std::cout << "\033[1;36m    \\______/         \033[0m \033[1;35mShell:\033[0m C++20 Standard" << std::endl;
+            std::cout << "\033[1;35mSource:\033[0m https://github.com/xaviershilosaputra/OpenAero" << std::endl;
         }
 
         else if (command == "whoami") {
@@ -144,35 +187,35 @@ int main() {
         }
 
        else if (command == "sudo") {
-            std::cout << "[sudo] password for openaero: ";
-            std::string pass = getTerminalInput(history); 
-
-            if (pass == "admin123") {
-                std::cout << "\033[1;32mAccess Granted.\033[0m Opening Repository..." << std::endl;
-                SystemUtils::openLink("https://github.com/xaviershilosaputra/OpenAero");
+            if (argument.empty()) {
+                std::cout << "usage: sudo <command>" << std::endl;
             } else {
-                std::cout << "sudo: 1 incorrect password attempt" << std::endl;
+                std::cout << "[sudo] password for openaero: ";
+                std::string pass = getPasswordInput();
+
+                if (pass == "admin123") {
+                    std::cout << "\033[1;32m[Privileged Execution]\033[0m" << std::endl;
+                    if (argument == "ls" || argument == "neofetch") {
+                        command = argument; 
+                        inputLine = argument;
+                    }
+                } else {
+                    std::cout << "sudo: 1 incorrect password attempt" << std::endl;
+                }
             }
         }
 
         else if (command == "cat") {
             if (!argument.empty()) {
                 namespace fs = std::filesystem;
-                
-                std::string argLower = argument;
-                std::transform(argLower.begin(), argLower.end(), argLower.begin(), ::tolower);
-
-                if (argLower == "repo") {
-                    SystemUtils::openLink("https://github.com/xaviershilosaputra/OpenAero");
-                } 
-                else if (fs::exists(argument)) {
-                    std::cout << "Opening " << argument << "..." << std::endl;
+                if (fs::exists(argument) && !fs::is_directory(argument)) {
+                    std::cout << "Reading " << argument << "..." << std::endl;
                     SystemUtils::openFile(argument);
                 } else {
-                    std::cout << "\033[1;31mError: File '" << argument << "' not found.\033[0m" << std::endl;
+                    std::cout << "cat: " << argument << ": No such file" << std::endl;
                 }
             } else {
-                std::cout << "Usage: cat <filename>" << std::endl;
+                std::cout << "usage: cat <filename>" << std::endl;
             }
         }
 
