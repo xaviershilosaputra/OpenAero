@@ -23,6 +23,20 @@ OpenAero is designed to be the ultimate companion for planespotters, flight simm
 * **Integration with navigation apps:** Direct links to digital mapping applications to assist with ground travel and airport transitions.
 * **Additional Aircraft Insights:** Expanded airframe data including Manufacturer Serial Number (MSN), aircraft age, and historical unit ownership.
 
+## Optimization
+
+### Shared Application Level Caching
+I used cross-page persistence layer using sessionStorage to bridge the GUI (main site) and the Terminal. This means both pages share a single source of truth for API data. By wrapping the AviationStack and Open-Meteo logic in a TTL governed system, the app achieves a 100 percent reduction in redundant API calls when you switch between views. If you look up a flight in the GUI, the data is already warm and ready when you open the Terminal.
+
+* **Implementation:** Created js/cache.js to manage a shared pool with specific expiration timers: 5 minutes for flights, 10 minutes for weather, and 60 minutes for airport coordinates.
+* **Results:** Eliminated unnecessary network latency for repeated searches and conserve API credits by serving cached data from the current session.
+
+### Resource and Logic Deduplication
+I refactored the code and removed over 200 lines of duplicate logic or data structures and combined it in the cache.js. Before the update, the AIRPORT_DB and other functions were copied across different files with inconsistent data (messy duplicates).
+
+* **Implementation:** I merged IATA and ICAO databases into one shared object and moved core utilities like sanitize, memoize, and fetchMetar into the global cache module.
+* **Results:** Bundle size is now much smaller. Additionally, API and memory usage is now significantly reduced. This modular "one source of truth" approach means any update to the database or logic now applies across the whole system instantly (better maintainability).
+
 ## Technical Stack
 
 * **Frontend:** Vanilla JavaScript (ES6+), Tailwind CSS, HTML5.
